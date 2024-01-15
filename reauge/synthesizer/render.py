@@ -52,7 +52,7 @@ def main(cfg: DictConfig):
             for ans in response.response_gen:
                 full_response += ans
                 message_placeholder.markdown(full_response + "▌")
-            if cur_cfg.enable_cite:
+            if citation_cfg.enable_cite:
                 full_response += '\n\n### References\n\n'
                 for idx, ref in enumerate(response.source_nodes):
                     full_response += f"[{idx+1}]\n\n" + "```\n\n" + ref.node.get_text() + "\n\n```\n\n"

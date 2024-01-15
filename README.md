@@ -16,28 +16,28 @@ export OPENAI_API_KEY=<YOUR_OPENAI_KEY>
 ```
 
 ### Build an index from corpus
-Upload your documents where the answers can be retrieved from to `data/<app_name>/corpus` folder. You can name your app in `app_name`. Change the `app_name` field in conf/config.yaml to your app name. 
+Upload your documents where the answers can be retrieved from to `data/<your_app_name>/corpus` folder.  
 ```
-python -m reauge.indexer.build
+python -m reauge.indexer.build ++app_name=<your_app_name>
 ```
 ### Prepare a test dataset
 Given some annotated data (question, reference) pairs, you can use the following command to prepare test data.
 ```
-python -m reauge.data_builder.build_from_annotated_retrieval_data 
+python -m reauge.data_builder.build_from_annotated_retrieval_data ++app_name=<your_app_name> 
 ```
 If you don't have annotated data, you can use the following command to generate some synthetic data from LLM. Note that this step may be costly if you use OPENAI API. Use a small `data_builder.generate_synthetic_query.from_num_nodes` value in `conf/config.yaml` to avoid high cost.
 ```
-python -m reauge.data_builder.generate_synthetic_query
+python -m reauge.data_builder.generate_synthetic_query ++app_name=<your_app_name>
 ```
 
 ### Evaluate the retriever
 ```
-python -m reauge.retriever.evaluate
+python -m reauge.retriever.evaluate ++app_name=<your_app_name>
 ```
 ### Run a chatbot app
 Note that you need to be in the entry directory of this repo to run the chatbot. 
 ```
-streamlit run reauge/synthesizer/render.py
+streamlit run reauge/synthesizer/render.py ++app_name=<your_app_name>
 ```
 
 ## TODO
