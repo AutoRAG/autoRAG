@@ -5,6 +5,12 @@ from omegaconf import DictConfig, OmegaConf
 import hydra
 from llama_index.query_engine import CitationQueryEngine
 
+# Create an instance of the GlobalHydra class
+global_hydra = hydra.core.global_hydra.GlobalHydra()
+
+# Call the clear() method on the instance
+global_hydra.clear()
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
     cur_cfg = cfg.synthesizer.render

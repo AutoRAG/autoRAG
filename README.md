@@ -1,5 +1,6 @@
-# reauge
-Reauge is a package for easy development for retrieval augmented generation system using command lines.
+# AutoRAG
+
+The AutoRAG Toolkit is specifically designed to streamline the creation and refinement of Retrieval Augmented Generation (RAG) systems. RAG, a key methodology in integrating Large Language Models (LLMs) with tailored data sets, forms an essential base for numerous LLM-driven applications. However, the complexities involved in developing RAG, notably in areas like performance evaluation and enhancement, are substantial. This toolkit aims to simplify the process by offering user-friendly tools for both automated and manual evaluations. It effectively utilizes existing evaluation datasets or creates synthetic data to foster evaluation-driven development. This involves automatic optimization of various system components such as data preprocessing, document retrieval, and prompting engineering, all aligned with specific evaluation metrics. The primary objective of the AutoRAG Toolkit is to ease and accelerate the development of high-quality RAG systems.
 
 ## Install
 In the main repo folder, run
@@ -18,29 +19,44 @@ export OPENAI_API_KEY=<YOUR_OPENAI_KEY>
 ### Build an index from corpus
 Upload your documents where the answers can be retrieved from to `data/<your_app_name>/corpus` folder.  
 ```
-python -m reauge.indexer.build ++app_name=<your_app_name>
+python -m autorag.indexer.build ++app_name=<your_app_name>
 ```
 ### Prepare a test dataset
 Given some annotated data (question, reference) pairs, you can use the following command to prepare test data.
 ```
-python -m reauge.data_builder.build_from_annotated_retrieval_data ++app_name=<your_app_name> 
+python -m autorag.data_builder.build_from_annotated_retrieval_data ++app_name=<your_app_name> 
 ```
 If you don't have annotated data, you can use the following command to generate some synthetic data from LLM. Note that this step may be costly if you use OPENAI API. Use a small `data_builder.generate_synthetic_query.from_num_nodes` value in `conf/config.yaml` to avoid high cost.
 ```
-python -m reauge.data_builder.generate_synthetic_query ++app_name=<your_app_name>
+python -m autorag.data_builder.generate_synthetic_query ++app_name=<your_app_name>
 ```
 
 ### Evaluate the retriever
 ```
-python -m reauge.retriever.evaluate ++app_name=<your_app_name>
+python -m autorag.retriever.evaluate ++app_name=<your_app_name>
 ```
 ### Run a chatbot app
 Note that you need to be in the entry directory of this repo to run the chatbot. 
 ```
-streamlit run reauge/synthesizer/render.py ++app_name=<your_app_name>
+streamlit run autorag/synthesizer/render.py ++app_name=<your_app_name>
 ```
 
-## TODO
+# TODO
+## Features to be supported
+AutoRAG targets to offer a suite of features designed to ease and accelerate the development of RAG systems:
+
+- **Performance Evaluation and Optimization**: AutoRAG includes tools for automated and manual performance evaluation and automate the optimization process for the components in the RAG system, helping you to maximize the efficiency and accuracy of your system.
+
+- **Automated Data Integration**: Seamlessly integrate your custom data sets with LLMs. AutoRAG streamlines the process of data retrieval and formatting.
+
+- **Modular Design**: AutoRAG's modular architecture allows for easy customization and extension. Whether you're building a simple Q&A system or a complex conversational AI, AutoRAG can be tailored to meet your specific needs.
+
+- **Scalable Infrastructure**: Designed with scalability in mind, AutoRAG can handle projects of any size, from small-scale experiments to large-scale deployments.
+
+- **User-Friendly Interface**: With an intuitive interface and comprehensive documentation, AutoRAG is accessible to developers of all skill levels.
+
+
+## Short term TODO
 1. Add evaluation for synthesizer
 2. Optimize the code
 3. Add unit test
