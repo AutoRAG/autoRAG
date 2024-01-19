@@ -1,6 +1,7 @@
 # AutoRAG
 
-The AutoRAG Toolkit is specifically designed to streamline the creation and refinement of Retrieval Augmented Generation (RAG) systems. RAG, a key methodology in integrating Large Language Models (LLMs) with tailored data sets, forms an essential base for numerous LLM-driven applications. However, the complexities involved in developing RAG, notably in areas like performance evaluation and enhancement, are substantial. This toolkit aims to simplify the process by offering user-friendly tools for both automated and manual evaluations. It effectively utilizes existing evaluation datasets or creates synthetic data to foster evaluation-driven development. This involves automatic optimization of various system components such as data preprocessing, document retrieval, and prompting engineering, all aligned with specific evaluation metrics. The primary objective of the AutoRAG Toolkit is to ease and accelerate the development of high-quality RAG systems.
+The AutoRAG Toolkit is specifically designed to streamline the creation and refinement of Retrieval Augmented Generation (RAG) systems. RAG, a key methodology in integrating Large Language Models (LLMs) with tailored data sets, forms an essential base for numerous LLM-driven applications. However, the complexities involved in developing RAG, notably in areas like performance evaluation and enhancement, are substantial. 
+This toolkit aims to ease and accelerate the development of high-quality RAG systems through automatic evaluation-driven optimization of various system components such as data preprocessing, document indexing and retrieval, and prompting engineering.
 
 ## Install
 In the main repo folder, run
