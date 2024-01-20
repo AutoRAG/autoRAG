@@ -49,7 +49,7 @@ python -m autorag.data_builder.generate_synthetic_query ++app_name=<your_app_nam
 python -m autorag.retriever.evaluate ++app_name=<your_app_name>
 ```
 
-# TODO
+# Roadmap
 ## Features to be supported
 AutoRAG targets to offer a suite of features designed to ease and accelerate the development of RAG systems:
 
@@ -63,9 +63,25 @@ AutoRAG targets to offer a suite of features designed to ease and accelerate the
 
 - **User-Friendly Interface**: With an intuitive interface and comprehensive documentation, AutoRAG is accessible to developers of all skill levels.
 
-
-## Short term TODO
-1. Add evaluation for synthesizer
-2. Optimize the code
-3. Add unit test
-4. Add advanced PDF preprocessor
+## Feature to add list
+- [ ] Support unstructured data
+- [ ] Support structured data
+- [ ] Enable component-level performance evaluation
+    - [ ] Evaluation of synthesizer by checking with the question and retrieved docs
+    - [ ] Evaluation of synthesizer by comparing with a ground truth answer or another answer from baseline
+    - [ ] Evaluation of retrieval when there is no ground truth doc
+- [ ] Enable various methods to improve performance
+    - [ ] Support meta data
+    - [ ] Support Azure BI Document intelligence
+    - [ ] Enable chunk size variation
+    - [ ] Enable Context enrichment (index-small-retrieve-big)
+    - [ ] Enable summarized chunks
+    - [ ] Enable HyDE
+    - [ ] Enable Query rewrite
+    - [ ] Enable Hybrid retrieval
+    - [ ] Enable Fine-tuning retrieval model
+    - [ ] Enable re-ranking
+- [ ] Human feedback collection
+- [ ] Automatic optimization
+    - [ ] Grid search
+    - [ ] Smart search (research topic)
