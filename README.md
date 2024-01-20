@@ -4,6 +4,11 @@ The AutoRAG Toolkit is specifically designed to streamline the creation and refi
 This toolkit aims to ease and accelerate the development of high-quality RAG systems through automatic evaluation-driven optimization of various system components such as data preprocessing, document indexing and retrieval, and prompting engineering.
 
 ## Install
+Prerequisite:
+```
+Python 3.10.9
+```
+
 In the main repo folder, run
 ```
 pip install -e .
