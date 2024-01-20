@@ -27,6 +27,13 @@ Upload your documents where the answers can be retrieved from to `data/<your_app
 ```
 python -m autorag.indexer.build ++app_name=<your_app_name>
 ```
+### Run a chatbot app
+Note that you need to be in the entry directory of this repo to run the chatbot. 
+```
+streamlit run autorag/synthesizer/render.py ++app_name=<your_app_name>
+```
+
+## Evaluation
 ### Prepare a test dataset
 Given some annotated data (question, reference) pairs, you can use the following command to prepare test data.
 ```
@@ -40,11 +47,6 @@ python -m autorag.data_builder.generate_synthetic_query ++app_name=<your_app_nam
 ### Evaluate the retriever
 ```
 python -m autorag.retriever.evaluate ++app_name=<your_app_name>
-```
-### Run a chatbot app
-Note that you need to be in the entry directory of this repo to run the chatbot. 
-```
-streamlit run autorag/synthesizer/render.py ++app_name=<your_app_name>
 ```
 
 # TODO
