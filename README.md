@@ -3,7 +3,7 @@
 The AutoRAG Toolkit is specifically designed to streamline the creation and refinement of Retrieval Augmented Generation (RAG) systems. RAG, a key methodology in integrating Large Language Models (LLMs) with tailored data sets, forms an essential base for numerous LLM-driven applications. However, the complexities involved in developing RAG, notably in areas like performance evaluation and enhancement, are substantial. 
 This toolkit aims to ease and accelerate the development of high-quality RAG systems through automatic evaluation-driven optimization of various system components such as data preprocessing, document indexing and retrieval, and prompting engineering.
 
-## Install
+## Installation
 Prerequisite:
 ```
 Python 3.10.9
@@ -50,7 +50,7 @@ python -m autorag.retriever.evaluate ++app_name=<your_app_name>
 ```
 
 # Roadmap
-## Features to be supported
+## High-level features to be supported
 AutoRAG targets to offer a suite of features designed to ease and accelerate the development of RAG systems:
 
 - **Performance Evaluation and Optimization**: AutoRAG includes tools for automated and manual performance evaluation and automate the optimization process for the components in the RAG system, helping you to maximize the efficiency and accuracy of your system.
@@ -63,7 +63,7 @@ AutoRAG targets to offer a suite of features designed to ease and accelerate the
 
 - **User-Friendly Interface**: With an intuitive interface and comprehensive documentation, AutoRAG is accessible to developers of all skill levels.
 
-## Feature to add list
+## Low-level features to be supported
 - [ ] Support unstructured data
 - [ ] Support structured data
 - [ ] Enable component-level performance evaluation
