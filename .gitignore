@@ -150,3 +150,10 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
+
+# outputs
+outputs/
+persist_dir/
+
+# data
+data/
