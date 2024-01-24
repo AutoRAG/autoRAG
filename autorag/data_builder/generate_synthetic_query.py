@@ -10,6 +10,7 @@ from llama_index.evaluation import (
     generate_question_context_pairs,
 )
 
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
     index_dir = cfg.data_builder.generate_synthetic_query.index_dir
@@ -23,7 +24,7 @@ def main(cfg: DictConfig):
     # load index
     index = load_index_from_storage(storage_context, service_context=service_context)
     random.seed(random_seed)
-    nodes = sorted(index.docstore.docs.values(), key=lambda x: x.id_)               
+    nodes = sorted(index.docstore.docs.values(), key=lambda x: x.id_)
     assert from_num_nodes <= len(nodes)
     selected_indices = random.sample(range(len(nodes)), from_num_nodes)
     selected_nodes = [nodes[idx] for idx in selected_indices]
@@ -36,6 +37,7 @@ def main(cfg: DictConfig):
     output_dir = os.path.dirname(output_path)
     os.makedirs(output_dir, exist_ok=True)
     qa_dataset.save_json(output_path)
+
 
 if __name__ == "__main__":
     main()
