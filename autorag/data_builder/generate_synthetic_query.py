@@ -9,13 +9,17 @@ import random
 from llama_index.evaluation import (
     generate_question_context_pairs,
 )
+from llama_index.finetuning.embeddings.common import DEFAULT_QA_GENERATE_PROMPT_TMPL
 
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
-    index_dir = cfg.data_builder.generate_synthetic_query.index_dir
-    from_num_nodes = cfg.data_builder.generate_synthetic_query.from_num_nodes
-    output_path = cfg.data_builder.generate_synthetic_query.output_path
-    random_seed = cfg.data_builder.generate_synthetic_query.random_seed
+    cur_cfg = cfg.data_builder.generate_synthetic_query
+    index_dir = cur_cfg.index_dir
+    from_num_nodes = cur_cfg.from_num_nodes
+    output_path = cur_cfg.output_path
+    random_seed = cur_cfg.random_seed
+    prompt_template_path = cur_cfg.prompt_template_path
+    num_questions_per_chunk = cur_cfg.num_questions_per_chunk
 
     service_context = ServiceContext.from_defaults()
     # rebuild storage context
@@ -29,9 +33,14 @@ def main(cfg: DictConfig):
     selected_nodes = [nodes[idx] for idx in selected_indices]
 
     llm = OpenAI(model="gpt-4")
-
+    if prompt_template_path:
+        with open(prompt_template_path, 'r', encoding='utf-8') as f:
+            qa_generate_prompt_tmpl = f.read().strip('\n')
+    else:
+        qa_generate_prompt_tmpl = DEFAULT_QA_GENERATE_PROMPT_TMPL
+    print(qa_generate_prompt_tmpl)
     qa_dataset = generate_question_context_pairs(
-        selected_nodes, llm=llm, num_questions_per_chunk=2
+        selected_nodes, llm=llm, qa_generate_prompt_tmpl=qa_generate_prompt_tmpl, num_questions_per_chunk=num_questions_per_chunk
     )
     output_dir = os.path.dirname(output_path)
     os.makedirs(output_dir, exist_ok=True)

@@ -6,9 +6,11 @@ indexer:
 data_builder:
   generate_synthetic_query:
     index_dir: ${indexer.build.index_dir} 
+    prompt_template_path: data/${app_name}/synthetic_data/generate_synthetic_query_prompt_template.txt
     output_path: data/${app_name}/synthetic_data/synthetic_queries.json
     random_seed: 0
-    from_num_nodes: 10
+    from_num_nodes: 2
+    num_questions_per_chunk: 2
   build_from_annotated_retrieval_data:
     annotated_data_path: data/${app_name}/annotated_data/annotated_example.xlsx
     index_dir: ${indexer.build.index_dir} 
