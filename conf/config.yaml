@@ -1,8 +1,9 @@
 app_name: example
 indexer:
   build:
-    data_dir: data/${app_name}/corpus
+    data_dir: data/${app_name}/corpus_json
     index_dir: persist_dir/${app_name}/index
+    data_processor: azure
 data_builder:
   generate_synthetic_query:
     index_dir: ${indexer.build.index_dir} 
