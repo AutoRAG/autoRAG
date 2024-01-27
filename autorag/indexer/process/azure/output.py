@@ -5,6 +5,8 @@ Process all the azure-preanalyzed files from data directory.
 
 from ..utils.json import JsonFileLoader
 from .paragraph import AzureParagraphProcessor
+from .table import AzureTablesProcessor
+
 
 class AzureOutputProcessor:
     """
@@ -20,26 +22,29 @@ class AzureOutputProcessor:
         # Load all files from the specified directory
         self.all_files = JsonFileLoader(data_dir).load()
         # Process the loaded files into documents
-        # self.documents = self.all_files
-        self.documents = self.get_documents()
+        self.nodes = self.get_nodes()
 
-    def get_documents(self) -> list:
-        documents = []
+    def get_nodes(self) -> list:
+        nodes = []
+
         # Process the loaded files and return the count
         for file_name, file_content in self.all_files.items():
             paragraphs_list = file_content.get("paragraphs", [])
-            table_content_list = file_content.get("tables", [])
+            tables_list = file_content.get("tables", [])
 
             if paragraphs_list:
-                paragraphs_documents = AzureParagraphProcessor(
-                    paragraphs_list, file_name).documents
-                print("paragraphs_documents", len(paragraphs_documents))
-                documents += paragraphs_documents
+                paragraphs_nodes = AzureParagraphProcessor(
+                    paragraphs_list, file_name).nodes
+                nodes += paragraphs_nodes
 
-            if table_content_list:
-                table_content_documents = []
-                documents += table_content_documents
+            if tables_list:
+                table_content_nodes = AzureTablesProcessor(
+                    tables_list, file_name).nodes
+                nodes += table_content_nodes
 
-        return documents
+        return nodes
+    
+
+    
     
 

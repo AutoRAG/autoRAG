@@ -12,4 +12,5 @@ class ConfigSingleton:
             raise Exception("This class is a singleton!")
         else:
             ConfigSingleton._instance = self
-            self.cfg = None  # Initialize the configuration attribute here
+            # Initialize the configuration attribute here
+            self.cfg = None

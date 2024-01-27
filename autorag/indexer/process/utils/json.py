@@ -9,8 +9,7 @@ class JsonFileLoader:
     by its extension. Load it using the _load_a_file method, and add to 
     the all_files dict.
 
-    Args:
-        data_dir (str): Path to the data directory.
+    :param data_dir (str): Path to the data directory.
     '''
 
     def __init__(self, data_dir: str = None) -> None:
@@ -32,8 +31,7 @@ class JsonFileLoader:
             if data:
                 filename = filename.split(".")[0]
                 all_files[filename] = data  
-
-        return all_files  # Return dictionary containing all loaded JSON data
+        return all_files
 
     def _load_a_file(self, filename: str):
         # Internal method to load a single JSON file.
