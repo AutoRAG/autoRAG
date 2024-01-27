@@ -1,7 +1,6 @@
 from llama_index import Document
 from llama_index.schema import TextNode
 from llama_index.node_parser import SentenceSplitter
-from ...config_singleton import ConfigSingleton
 
 # Define roles to be excluded
 DEFAULT_EXCLUDED_ROLES: list[str] = ["pageHeader", "pageNumber"]
@@ -21,7 +20,10 @@ class AzureParagraphProcessor:
     """
 
     def __init__(
-        self, azure_paragraphs_list: list[dict] = None, file_name: str = None
+        self,
+        azure_paragraphs_list: list[dict] = None,
+        file_name: str = None,
+        sentence_splitter_args: dict = {},
     ) -> None:
 
         # Initialize the AzureParagraphProcessor class.
@@ -32,7 +34,7 @@ class AzureParagraphProcessor:
         filtered_paragraphs = self._filter_content()
         combined_page_content = self.combined_page_content(filtered_paragraphs)
         self.documents = self.get_documents(combined_page_content)
-        self.nodes = self.get_nodes()
+        self.nodes = self.get_nodes(sentence_splitter_args)
 
     def _filter_content(self) -> list[dict]:
         """
@@ -97,15 +99,12 @@ class AzureParagraphProcessor:
             documents.append(new_document)
         return documents
 
-    def get_nodes(self) -> list[TextNode]:
+    def get_nodes(self, sentence_splitter_args) -> list[TextNode]:
         """
         Get nodes from documents.
 
         :return: A list of splitted text nodes with the given config.
         """
-        cfg = ConfigSingleton.get_instance().cfg
-        # Initialize a SentenceSplitter with the given arguments
-        sentence_splitter_args = cfg.indexer.build.node_parser.args.sentence_splitter
         splitter = SentenceSplitter(**sentence_splitter_args)
         # Get nodes using the SentenceSplitter
         nodes = splitter.get_nodes_from_documents(self.documents, show_progress=True)

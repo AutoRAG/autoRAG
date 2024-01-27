@@ -18,9 +18,10 @@ class AzureOutputProcessor:
     :param data_dir: The directory containing JSON files to be processed.
     """
 
-    def __init__(self, data_dir: str = None) -> None:
+    def __init__(self, data_dir: str = None, sentence_splitter_args: dict = {}) -> None:
         # Load all files from the specified directory
         self.all_files = JsonFileLoader(data_dir).load()
+        self.sentence_splitter_args = sentence_splitter_args
         # Process the loaded files into nodes
         self.nodes = self.get_nodes()
 
@@ -34,7 +35,7 @@ class AzureOutputProcessor:
             # Process paragraph data
             if paragraphs_list:
                 paragraphs_nodes = AzureParagraphProcessor(
-                    paragraphs_list, file_name
+                    paragraphs_list, file_name, self.sentence_splitter_args
                 ).nodes
                 nodes += paragraphs_nodes
             # Process table data
