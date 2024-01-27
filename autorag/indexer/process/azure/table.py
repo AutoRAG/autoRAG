@@ -93,9 +93,7 @@ class AzureTablesProcessor:
         row in each table, a TextNode object is created. The text of the table
         row is converted to a string and set as the text of the node.
 
-        Returns:
-            nodes (list[TextNode]): A list of TextNode objects, each representing
-                                    a row in the tables.
+        :return: A list of TextNode objects each representing a row in the tables.
         """
         nodes = []
         for idx in range(len(self.table_dataframes)):
@@ -237,15 +235,18 @@ class SingleTableProcessor:
         """
         Finds the header for a given column index.
         :param col_idx: Column index.
-        :return: Header name for the column.
+        :return: Header name for the column. Header name for the column.
+                If empty string, returns a default header name.
         """
         header_name = ""
         for header in self.headers:
             if col_idx in header:
                 current_header = header[col_idx]
                 if current_header == "":
+                    # Set default header name if empty
                     current_header = f"column_{col_idx}"
-
+                # Set header_name if it's the first header found, and
+                # Concatenate if more than one header found.
                 if header_name == "":
                     header_name = current_header
                 else:
