@@ -4,15 +4,10 @@ from llama_index.node_parser import SentenceSplitter
 from ...config_singleton import ConfigSingleton
 
 # Define roles to be excluded
-DEFAULT_EXCLUDED_ROLES: list[str] = [
-    'pageHeader', 
-    'pageNumber'
-]
+DEFAULT_EXCLUDED_ROLES: list[str] = ["pageHeader", "pageNumber"]
 
 # Define contents to be excluded
-DEFAULT_EXCLUDED_CONTENTS: list[str] = [
-    "Contains Nonbinding Recommendations"
-]
+DEFAULT_EXCLUDED_CONTENTS: list[str] = ["Contains Nonbinding Recommendations"]
 
 DEFAULT_FILE_TYPE: str = "Guidance"
 
@@ -24,11 +19,10 @@ class AzureParagraphProcessor:
     :param azure_paragraphs_list: The list of paragraphs returned from Azure.
     :param file_name: The name of the file.
     """
+
     def __init__(
-            self, 
-            azure_paragraphs_list: list[dict] = None, 
-            file_name: str = None
-        ) -> None:
+        self, azure_paragraphs_list: list[dict] = None, file_name: str = None
+    ) -> None:
 
         # Initialize the AzureParagraphProcessor class.
         self.azure_paragraphs_list = azure_paragraphs_list
@@ -65,7 +59,7 @@ class AzureParagraphProcessor:
         Combines filtered content by page.
 
         :param filtered_content: Filtered paragraph content.
-        :return: A dictionary where each key is a page number (int) and each 
+        :return: A dictionary where each key is a page number (int) and each
              value is a string combining all the text content from that page.
         """
         combined_page_content = {}
@@ -86,19 +80,19 @@ class AzureParagraphProcessor:
         Creates a list of Document objects from the combined page content.
 
         :param combined_page_content: [{page(int):content(str)},].
-        :return: A list of Document objects, each representing a page from the 
+        :return: A list of Document objects, each representing a page from the
                 original content, along with its metadata.
         """
         documents = []
         for content_page, content_text in combined_page_content.items():
             # Create a new document for each page
             new_document = Document(
-                text = content_text,
-                metadata = {
+                text=content_text,
+                metadata={
                     "page_number": content_page,
                     "document_name": self.file_name,
-                    "document_type": DEFAULT_FILE_TYPE
-                }
+                    "document_type": DEFAULT_FILE_TYPE,
+                },
             )
             documents.append(new_document)
         return documents
@@ -114,7 +108,5 @@ class AzureParagraphProcessor:
         sentence_splitter_args = cfg.indexer.build.node_parser.args.sentence_splitter
         splitter = SentenceSplitter(**sentence_splitter_args)
         # Get nodes using the SentenceSplitter
-        nodes = splitter.get_nodes_from_documents(
-            self.documents, show_progress=True
-        )
+        nodes = splitter.get_nodes_from_documents(self.documents, show_progress=True)
         return nodes

@@ -7,6 +7,7 @@ from .config_singleton import ConfigSingleton
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
     # Setting the cfg in the singleton instance to the one loaded by Hydra.
@@ -26,12 +27,12 @@ def main(cfg: DictConfig):
     else:
         documents = SimpleDirectoryReader(data_dir).load_data()
         service_context = ServiceContext.from_defaults()
-        index = VectorStoreIndex.from_documents(documents, service_context=service_context)
+        index = VectorStoreIndex.from_documents(
+            documents, service_context=service_context
+        )
 
     index.storage_context.persist(persist_dir=index_dir)
- 
-    
+
 
 if __name__ == "__main__":
     main()
-    

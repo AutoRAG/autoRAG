@@ -34,17 +34,12 @@ class AzureOutputProcessor:
 
             if paragraphs_list:
                 paragraphs_nodes = AzureParagraphProcessor(
-                    paragraphs_list, file_name).nodes
+                    paragraphs_list, file_name
+                ).nodes
                 nodes += paragraphs_nodes
 
             if tables_list:
-                table_content_nodes = AzureTablesProcessor(
-                    tables_list, file_name).nodes
+                table_content_nodes = AzureTablesProcessor(tables_list, file_name).nodes
                 nodes += table_content_nodes
 
         return nodes
-    
-
-    
-    
-

@@ -8,6 +8,7 @@ from llama_index.evaluation import (
 )
 import pandas as pd
 
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
     index_dir = cfg.retriever.evaluate.index_dir
@@ -35,7 +36,8 @@ def main(cfg: DictConfig):
     full_df = pd.DataFrame(metric_dicts)
     for metric in metrics:
         metric_ave_val = full_df[metric].mean()
-        print(f'{metric}: {metric_ave_val}')
+        print(f"{metric}: {metric_ave_val}")
+
 
 if __name__ == "__main__":
     main()
