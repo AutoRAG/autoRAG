@@ -16,15 +16,22 @@ class AzureOutputProcessor:
     and process them into TextNode objects.
 
     :param data_dir: The directory containing JSON files to be processed.
+    :param file_type: The type of the processed files.
     :param sentence_splitter_args: Arguments for the SentenceSplitter function.
                                    This can include arguments like chunk_size,
                                    chunk_overlap, or any other arguments that
                                    SentenceSplitter expects.
     """
 
-    def __init__(self, data_dir: str = None, sentence_splitter_args: dict = {}) -> None:
+    def __init__(
+        self,
+        data_dir: str = None,
+        file_type: str = None,
+        sentence_splitter_args: dict = {},
+    ) -> None:
         # Load all files from the specified directory
         self.all_files = JsonFileLoader(data_dir).load()
+        self.file_type = file_type
         # Process the loaded files into nodes
         self.sentence_splitter_args = sentence_splitter_args
         self.nodes = self.get_nodes()
@@ -39,12 +46,14 @@ class AzureOutputProcessor:
             # Process paragraph data
             if paragraphs_list:
                 paragraphs_nodes = AzureParagraphProcessor(
-                    paragraphs_list, file_name, self.sentence_splitter_args
+                    paragraphs_list, file_name, self.file_type, self.sentence_splitter_args,
                 ).nodes
                 nodes += paragraphs_nodes
             # Process table data
             if tables_list:
-                table_content_nodes = AzureTablesProcessor(tables_list, file_name).nodes
+                table_content_nodes = AzureTablesProcessor(
+                    tables_list, file_name, self.file_type
+                ).nodes
                 nodes += table_content_nodes
 
         return nodes

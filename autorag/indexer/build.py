@@ -19,7 +19,8 @@ def main(cfg: DictConfig):
     if data_processor == "azure":
         # Initialize a SentenceSplitter with the given arguments
         sentence_splitter_args = cfg.indexer.build.node_parser.args.sentence_splitter
-        nodes = AzureOutputProcessor(data_dir, sentence_splitter_args).nodes
+        file_type = cfg.indexer.build.file_type
+        nodes = AzureOutputProcessor(data_dir, file_type, sentence_splitter_args).nodes
         print(len(nodes))
         index = VectorStoreIndex(nodes)
     else:

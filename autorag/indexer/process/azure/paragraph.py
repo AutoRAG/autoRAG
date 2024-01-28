@@ -8,8 +8,6 @@ DEFAULT_EXCLUDED_ROLES: list[str] = ["pageHeader", "pageNumber"]
 # Define contents to be excluded
 DEFAULT_EXCLUDED_CONTENTS: list[str] = ["Contains Nonbinding Recommendations"]
 
-DEFAULT_FILE_TYPE: str = "Guidance"
-
 
 class AzureParagraphProcessor:
     """
@@ -17,6 +15,7 @@ class AzureParagraphProcessor:
 
     :param azure_paragraphs_list: The list of paragraphs returned from Azure.
     :param file_name: The name of the file.
+    :param file_type: The type of the file.
     :param sentence_splitter_args: Arguments for the SentenceSplitter function.
                                    This can include arguments like chunk_size,
                                    chunk_overlap, or any other arguments that
@@ -27,12 +26,14 @@ class AzureParagraphProcessor:
         self,
         azure_paragraphs_list: list[dict] = None,
         file_name: str = None,
+        file_type: str = None,
         sentence_splitter_args: dict = {},
     ) -> None:
 
         # Initialize the AzureParagraphProcessor class.
         self.azure_paragraphs_list = azure_paragraphs_list
         self.file_name = file_name
+        self.file_type = file_type
 
         # Filter content and obtain documents and nodes
         filtered_paragraphs = self._filter_content()
@@ -97,7 +98,7 @@ class AzureParagraphProcessor:
                 metadata={
                     "page_number": content_page,
                     "document_name": self.file_name,
-                    "document_type": DEFAULT_FILE_TYPE,
+                    "document_type": self.file_type,
                 },
             )
             documents.append(new_document)

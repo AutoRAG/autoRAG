@@ -1,8 +1,6 @@
 from typing import List, Dict, Any, Optional
 from llama_index.schema import TextNode
 
-DEFAULT_FILE_TYPE: str = "Guidance"
-
 UNWANTED_CONTENT: dict[str, Any] = {
     "+\n:selected:": "+",
     "-\n:unselected:": "-",
@@ -14,14 +12,23 @@ UNWANTED_CONTENT: dict[str, Any] = {
 class AzureTablesProcessor:
     """
     Iterates over a list of table data.
+
+    :param azure_tables_list: The list of tables returned from Azure.
+    :param file_name: The name of the file.
+    :param file_type: The type of the file.
     """
 
     def __init__(
-        self, azure_tables_list: list[dict[str, Any]] = [], file_name: str = None
+        self,
+        azure_tables_list: list[dict[str, Any]] = [],
+        file_name: str = None,
+        file_type: str = None,
     ) -> None:
+
         # Initialize the AzureTablesProcessor class.
         self.azure_tables_list = azure_tables_list
         self.file_name = file_name
+        self.file_type = file_type
         self.table_dataframes, self.table_pages = self.get_table_dataframes()
         self.nodes = self.get_table_nodes()
 
@@ -106,7 +113,7 @@ class AzureTablesProcessor:
                     metadata={
                         "page_number": table_page,
                         "document_name": self.file_name,
-                        "document_type": DEFAULT_FILE_TYPE,
+                        "document_type": self.file_type,
                     },
                 )
                 nodes.append(new_node)
