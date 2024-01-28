@@ -3,6 +3,14 @@ indexer:
   build:
     data_dir: data/${app_name}/corpus
     index_dir: persist_dir/${app_name}/index
+    file_type: Guidance
+    data_processor: azure
+    node_parser:
+      type: sentence_splitter
+      args:
+        sentence_splitter:
+          chunk_size: 512
+          chunk_overlap: 20
 data_builder:
   generate_synthetic_query:
     index_dir: ${indexer.build.index_dir} 
