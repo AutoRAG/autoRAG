@@ -4,6 +4,10 @@ from llama_index import StorageContext, load_index_from_storage
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from llama_index.query_engine import CitationQueryEngine
+from llama_index.indices.query.query_transform import HyDEQueryTransform
+from llama_index.query_engine.transform_query_engine import (
+    TransformQueryEngine,
+)
 
 # Create an instance of the GlobalHydra class
 global_hydra = hydra.core.global_hydra.GlobalHydra()
@@ -14,7 +18,7 @@ global_hydra.clear()
 
 # initialize the index
 @st.cache_data
-def init(index_dir, enable_cite, similarity_top_k, citation_chunk_size):
+def init(index_dir, similarity_top_k, citation_chunk_size, enable_cite):
     service_context = ServiceContext.from_defaults()
     # rebuild storage context
     storage_context = StorageContext.from_defaults(persist_dir=index_dir)
@@ -69,12 +73,16 @@ def main(cfg: DictConfig):
     index_dir = cur_cfg.index_dir
     app_description = cur_cfg.app_description
     citation_cfg = cur_cfg.citation_cfg
+    enable_hyde = cur_cfg.enable_hyde
+
     query_engine = init(
         index_dir,
-        citation_cfg.enable_cite,
         citation_cfg.similarity_top_k,
         citation_cfg.citation_chunk_size,
+        citation_cfg.enable_cite,
     )
+    if enable_hyde:
+        hyde = HyDEQueryTransform(include_original=True)
 
     st.header("Chat with Your Documents (only support single-turn conversation now)")
 
@@ -109,6 +117,11 @@ def main(cfg: DictConfig):
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
+            if enable_hyde:
+                spinner_msg = "Generating hypothetical response"
+                with st.spinner(spinner_msg):
+                    prompt = hyde(prompt)
+                    full_response = f"=== Non-RAG response ===\n\n{prompt.embedding_strs[0]}\n\n=== RAG response ===\n\n"
             response = query_engine.query(prompt)
             for ans in response.response_gen:
                 full_response += ans
