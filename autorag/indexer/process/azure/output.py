@@ -46,7 +46,10 @@ class AzureOutputProcessor:
             # Process paragraph data
             if paragraphs_list:
                 paragraphs_nodes = AzureParagraphProcessor(
-                    paragraphs_list, file_name, self.file_type, self.sentence_splitter_args,
+                    paragraphs_list,
+                    file_name,
+                    self.file_type,
+                    self.sentence_splitter_args,
                 ).nodes
                 nodes += paragraphs_nodes
             # Process table data
