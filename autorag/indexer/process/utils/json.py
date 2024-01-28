@@ -18,7 +18,6 @@ class JsonFileLoader:
         if not data_dir:
             raise ValueError("Must provide `data_dir`.")
         # If the path is empty or not a directory, raise an error.
-
         if not os.path.isdir(data_dir):
             raise ValueError(f"Directory {data_dir} does not exist.")
 

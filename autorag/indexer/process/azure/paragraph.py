@@ -17,6 +17,10 @@ class AzureParagraphProcessor:
 
     :param azure_paragraphs_list: The list of paragraphs returned from Azure.
     :param file_name: The name of the file.
+    :param sentence_splitter_args: Arguments for the SentenceSplitter function.
+                                   This can include arguments like chunk_size,
+                                   chunk_overlap, or any other arguments that
+                                   SentenceSplitter expects.
     """
 
     def __init__(
@@ -99,7 +103,7 @@ class AzureParagraphProcessor:
             documents.append(new_document)
         return documents
 
-    def get_nodes(self, sentence_splitter_args) -> list[TextNode]:
+    def get_nodes(self, sentence_splitter_args: dict) -> list[TextNode]:
         """
         Get nodes from documents.
 
