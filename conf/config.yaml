@@ -6,7 +6,7 @@ indexer:
 data_builder:
   generate_synthetic_query:
     index_dir: ${indexer.build.index_dir} 
-    prompt_template_path: data/${app_name}/synthetic_data/generate_synthetic_query_prompt_template.txt
+    prompt_template_path: data/${app_name}/synthetic_data/qa_gen_tmpl.txt
     output_path: data/${app_name}/synthetic_data/synthetic_queries.json
     random_seed: 0
     from_num_nodes: 2
@@ -28,6 +28,7 @@ synthesizer:
   render:
     index_dir: ${indexer.build.index_dir}
     app_description: ${app_name}
+    enable_hyde: true
     citation_cfg:
       enable_cite: true
       citation_chunk_size: 512

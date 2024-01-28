@@ -35,13 +35,16 @@ def main(cfg: DictConfig):
 
     llm = OpenAI(model="gpt-4")
     if prompt_template_path:
-        with open(prompt_template_path, 'r', encoding='utf-8') as f:
-            qa_generate_prompt_tmpl = f.read().strip('\n')
+        with open(prompt_template_path, "r", encoding="utf-8") as f:
+            qa_generate_prompt_tmpl = f.read().strip("\n")
     else:
         qa_generate_prompt_tmpl = DEFAULT_QA_GENERATE_PROMPT_TMPL
     print(qa_generate_prompt_tmpl)
     qa_dataset = generate_question_context_pairs(
-        selected_nodes, llm=llm, qa_generate_prompt_tmpl=qa_generate_prompt_tmpl, num_questions_per_chunk=num_questions_per_chunk
+        selected_nodes,
+        llm=llm,
+        qa_generate_prompt_tmpl=qa_generate_prompt_tmpl,
+        num_questions_per_chunk=num_questions_per_chunk,
     )
     output_dir = os.path.dirname(output_path)
     os.makedirs(output_dir, exist_ok=True)
