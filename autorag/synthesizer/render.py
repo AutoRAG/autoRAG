@@ -1,9 +1,9 @@
 import streamlit as st
 from llama_index import ServiceContext, PromptHelper
-from llama_index import StorageContext, load_index_from_storage
 from omegaconf import DictConfig, OmegaConf
 import hydra
 from llama_index.llms import OpenAI
+from llama_index.response_synthesizers import get_response_synthesizer, ResponseMode
 
 from llama_index.query_engine import CitationQueryEngine
 from llama_index.indices.query.query_transform import HyDEQueryTransform
@@ -12,8 +12,13 @@ from llama_index.query_engine.transform_query_engine import (
 )
 from llama_index.schema import MetadataMode
 from llama_index.prompts import PromptTemplate
-from llama_index.query_engine.citation_query_engine import CITATION_QA_TEMPLATE
-from autorag.retriever.post_processors.node_expander import NodeExpander
+from llama_index.query_engine.citation_query_engine import (
+    CITATION_QA_TEMPLATE,
+    CITATION_REFINE_TEMPLATE,
+)
+import re
+from autorag.indexer.expanded_indexer import ExpandedIndexer
+
 
 # Create an instance of the GlobalHydra class
 global_hydra = hydra.core.global_hydra.GlobalHydra()
@@ -22,53 +27,44 @@ global_hydra = hydra.core.global_hydra.GlobalHydra()
 global_hydra.clear()
 
 
-# initialize the index
-# @st.cache_data # needs to turn it off otherwise service_context will become the default gpt3.5-turbo
-def load_index(index_dir, _service_context):
-    # rebuild storage context
-    storage_context = StorageContext.from_defaults(persist_dir=index_dir)
-    # load index
-    index = load_index_from_storage(storage_context, service_context=_service_context)
-    return index
+def init(index_dir, openai_model_name, citation_cfg, enable_node_expander=False):
 
+    expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
 
-def init(index_dir, openai_model_name, _citation_cfg, enable_node_expander):
+    index = expanded_index.index
+    node_postprocessors = (
+        [expanded_index.node_expander] if enable_node_expander else None
+    )
+
     llm = OpenAI(model=openai_model_name, temperature=0)
-    service_context = ServiceContext.from_defaults(llm=llm)
+    synthesizer_service_context = ServiceContext.from_defaults(llm=llm)
 
-    index = load_index(index_dir, service_context)
-
-    if enable_node_expander:
-        node_postprocessors = (
-            [NodeExpander.build(index)] if enable_node_expander else None
-        )
-
-    if _citation_cfg.enable_cite:
-        similarity_top_k = _citation_cfg.similarity_top_k
-        citation_chunk_size = _citation_cfg.citation_chunk_size
-        citation_qa_template_path = _citation_cfg.citation_qa_template_path
-
-        if citation_qa_template_path:
-            with open(citation_qa_template_path, "r", encoding="utf-8") as f:
-                citation_qa_template = PromptTemplate(f.read())
-        else:
-            citation_qa_template = CITATION_QA_TEMPLATE
-
-        # service_context for the synthesizer is same as service_context of the index
-        query_engine = CitationQueryEngine.from_args(
-            index,
-            similarity_top_k=similarity_top_k,
-            citation_qa_template=citation_qa_template,
-            # here we can control how granular citation sources are, the default is 512
-            citation_chunk_size=citation_chunk_size,
-            streaming=True,
-            node_postprocessors=node_postprocessors,
-            metadata_mode=MetadataMode.LLM,
-        )
+    if citation_cfg.citation_qa_template_path:
+        with open(citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
+            citation_qa_template = PromptTemplate(f.read())
     else:
-        query_engine = index.as_query_engine(
-            service_context=service_context, streaming=True
-        )
+        citation_qa_template = CITATION_QA_TEMPLATE
+
+    response_synthesizer = get_response_synthesizer(
+        service_context=synthesizer_service_context,
+        text_qa_template=citation_qa_template,
+        refine_template=CITATION_REFINE_TEMPLATE,
+        response_mode=ResponseMode.COMPACT,
+        use_async=False,
+        streaming=True,
+    )
+
+    # service_context for the synthesizer is same as service_context of the index
+    query_engine = CitationQueryEngine.from_args(
+        index,
+        response_synthesizer=response_synthesizer,
+        similarity_top_k=citation_cfg.similarity_top_k,
+        # here we can control how granular citation sources are, the default is 512
+        citation_chunk_size=citation_cfg.citation_chunk_size,
+        node_postprocessors=node_postprocessors,
+        metadata_mode=MetadataMode.LLM,
+    )
+
     return query_engine
 
 
@@ -99,6 +95,25 @@ def show_feedback_component(message_id):
                 st.write("thanks!")
 
 
+def replace_with_identifiers(s):
+    # Initialize a counter
+    mapping = {}
+
+    # Define a function to use as replacement in re.sub
+    def replacement(match):
+        matched_str = int(match.group().lstrip("[").rstrip("]"))
+        if matched_str not in mapping:
+            mapping[matched_str] = len(mapping) + 1
+
+        return f"[{mapping[matched_str]}]"
+
+    # Define the regex pattern
+    pattern = r"\[\d+\]"
+    # Replace all matches of the pattern with the new identifiers
+    new_s = re.sub(pattern, replacement, s)
+    return new_s, mapping
+
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
     cur_cfg = cfg.synthesizer.render
@@ -108,6 +123,7 @@ def main(cfg: DictConfig):
     enable_hyde = cur_cfg.enable_hyde
     enable_node_expander = cur_cfg.enable_node_expander
     openai_model_name = cur_cfg.openai_model_name
+    show_retrieved_nodes = cur_cfg.show_retrieved_nodes
 
     query_engine = init(
         index_dir,
@@ -151,26 +167,45 @@ def main(cfg: DictConfig):
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
+
             if enable_hyde:
                 spinner_msg = "Generating hypothetical response"
                 with st.spinner(spinner_msg):
                     prompt = hyde(prompt)
                     full_response = f"=== Non-RAG response ===\n\n{prompt.embedding_strs[0]}\n\n=== RAG response ===\n\n"
 
+            raw_rag_response = ""
             response = query_engine.query(prompt)
             for ans in response.response_gen:
-                full_response += ans
-                message_placeholder.markdown(full_response + "▌")
-            if citation_cfg.enable_cite:
-                full_response += "\n\n### References\n\n"
-                for idx, ref in enumerate(response.source_nodes):
-                    full_response += (
-                        f"[{idx+1}]\n\n"
-                        + "```\n\n"
-                        + ref.node.get_text()
-                        + "\n\n```\n\n"
-                    )
+                raw_rag_response += ans
+                rag_response, mapping = replace_with_identifiers(raw_rag_response)
+                message_placeholder.markdown(full_response + rag_response + "▌")
+            full_response += rag_response
+
+            full_response += "\n\n### References\n\n"
+            for raw_ref_id, new_ref_id in mapping.items():
+                ref_node = response.source_nodes[raw_ref_id - 1]
+                full_response += (
+                    f"#### [{new_ref_id}]\n\n"
+                    + "\n\n"
+                    + ref_node.node.get_text()
+                    + "\n\n"
+                )
+
             message_placeholder.markdown(full_response)
+
+            if show_retrieved_nodes:
+                with st.expander("Retrieved nodes"):
+                    retrieved_node_info = ""
+                    for idx, retrieved_node in enumerate(response.source_nodes):
+                        retrieved_node_info += (
+                            f"#### retrieved node [{idx + 1}]\n\n"
+                            + "\n\n```"
+                            + retrieved_node.node.get_text()
+                            + "```\n\n"
+                        )
+                    st.write(retrieved_node_info)
+
         message = {"role": "assistant", "content": full_response}
         st.session_state.messages.append(message)  # Add response to message history
 
