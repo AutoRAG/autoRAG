@@ -11,17 +11,21 @@ import hydra
 def main(cfg: DictConfig):
 
     # Extracting specific configuration values from the loaded configuration.
-    data_dir = cfg.indexer.build.data_dir
-    index_dir = cfg.indexer.build.index_dir
-    data_processor = cfg.indexer.build.data_processor
+    cur_cfg = cfg.indexer.build
+    data_dir = cur_cfg.data_dir
+    index_dir = cur_cfg.index_dir
+    data_processor = cur_cfg.data_processor
 
     # Processing documents based on the specified data_processor type.
     if data_processor == "azure":
         # Initialize a SentenceSplitter with the given arguments
-        sentence_splitter_args = cfg.indexer.build.node_parser.args.sentence_splitter
-        file_type = cfg.indexer.build.file_type
-        nodes = AzureOutputProcessor(data_dir, file_type, sentence_splitter_args).nodes
-        print(len(nodes))
+        sentence_splitter_args = cur_cfg.node_parser.args.sentence_splitter
+        file_type = cur_cfg.file_type
+        include_table = cur_cfg.include_table
+
+        nodes = AzureOutputProcessor(
+            data_dir, file_type, sentence_splitter_args, include_table
+        ).nodes
         index = VectorStoreIndex(nodes)
     else:
         documents = SimpleDirectoryReader(data_dir).load_data()

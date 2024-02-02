@@ -4,6 +4,7 @@ indexer:
     data_dir: data/${app_name}/corpus
     index_dir: persist_dir/${app_name}/index
     file_type: Guidance
+    include_table: true
     data_processor: azure
     node_parser:
       type: sentence_splitter
@@ -37,7 +38,10 @@ synthesizer:
     index_dir: ${indexer.build.index_dir}
     app_description: ${app_name}
     enable_hyde: true
+    enable_node_expander: true
+    openai_model_name: gpt-3.5-turbo-1106
     citation_cfg:
       enable_cite: true
       citation_chunk_size: 512
+      citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
       similarity_top_k: 3

@@ -1,13 +1,19 @@
 import streamlit as st
-from llama_index import ServiceContext
+from llama_index import ServiceContext, PromptHelper
 from llama_index import StorageContext, load_index_from_storage
 from omegaconf import DictConfig, OmegaConf
 import hydra
+from llama_index.llms import OpenAI
+
 from llama_index.query_engine import CitationQueryEngine
 from llama_index.indices.query.query_transform import HyDEQueryTransform
 from llama_index.query_engine.transform_query_engine import (
     TransformQueryEngine,
 )
+from llama_index.schema import MetadataMode
+from llama_index.prompts import PromptTemplate
+from llama_index.query_engine.citation_query_engine import CITATION_QA_TEMPLATE
+from autorag.retriever.post_processors.node_expander import NodeExpander
 
 # Create an instance of the GlobalHydra class
 global_hydra = hydra.core.global_hydra.GlobalHydra()
@@ -17,21 +23,47 @@ global_hydra.clear()
 
 
 # initialize the index
-@st.cache_data
-def init(index_dir, similarity_top_k, citation_chunk_size, enable_cite):
-    service_context = ServiceContext.from_defaults()
+# @st.cache_data # needs to turn it off otherwise service_context will become the default gpt3.5-turbo
+def load_index(index_dir, _service_context):
     # rebuild storage context
     storage_context = StorageContext.from_defaults(persist_dir=index_dir)
     # load index
-    index = load_index_from_storage(storage_context, service_context=service_context)
-    if enable_cite:
+    index = load_index_from_storage(storage_context, service_context=_service_context)
+    return index
+
+
+def init(index_dir, openai_model_name, _citation_cfg, enable_node_expander):
+    llm = OpenAI(model=openai_model_name, temperature=0)
+    service_context = ServiceContext.from_defaults(llm=llm)
+
+    index = load_index(index_dir, service_context)
+
+    if enable_node_expander:
+        node_postprocessors = (
+            [NodeExpander.build(index)] if enable_node_expander else None
+        )
+
+    if _citation_cfg.enable_cite:
+        similarity_top_k = _citation_cfg.similarity_top_k
+        citation_chunk_size = _citation_cfg.citation_chunk_size
+        citation_qa_template_path = _citation_cfg.citation_qa_template_path
+
+        if citation_qa_template_path:
+            with open(citation_qa_template_path, "r", encoding="utf-8") as f:
+                citation_qa_template = PromptTemplate(f.read())
+        else:
+            citation_qa_template = CITATION_QA_TEMPLATE
+
         # service_context for the synthesizer is same as service_context of the index
         query_engine = CitationQueryEngine.from_args(
             index,
             similarity_top_k=similarity_top_k,
+            citation_qa_template=citation_qa_template,
             # here we can control how granular citation sources are, the default is 512
             citation_chunk_size=citation_chunk_size,
             streaming=True,
+            node_postprocessors=node_postprocessors,
+            metadata_mode=MetadataMode.LLM,
         )
     else:
         query_engine = index.as_query_engine(
@@ -74,12 +106,14 @@ def main(cfg: DictConfig):
     app_description = cur_cfg.app_description
     citation_cfg = cur_cfg.citation_cfg
     enable_hyde = cur_cfg.enable_hyde
+    enable_node_expander = cur_cfg.enable_node_expander
+    openai_model_name = cur_cfg.openai_model_name
 
     query_engine = init(
         index_dir,
-        citation_cfg.similarity_top_k,
-        citation_cfg.citation_chunk_size,
-        citation_cfg.enable_cite,
+        openai_model_name,
+        citation_cfg,
+        enable_node_expander,
     )
     if enable_hyde:
         hyde = HyDEQueryTransform(include_original=True)
@@ -122,6 +156,7 @@ def main(cfg: DictConfig):
                 with st.spinner(spinner_msg):
                     prompt = hyde(prompt)
                     full_response = f"=== Non-RAG response ===\n\n{prompt.embedding_strs[0]}\n\n=== RAG response ===\n\n"
+
             response = query_engine.query(prompt)
             for ans in response.response_gen:
                 full_response += ans

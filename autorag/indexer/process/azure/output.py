@@ -21,6 +21,7 @@ class AzureOutputProcessor:
                                    This can include arguments like chunk_size,
                                    chunk_overlap, or any other arguments that
                                    SentenceSplitter expects.
+    :param include_table: whether to include the tables from the files
     """
 
     def __init__(
@@ -28,12 +29,14 @@ class AzureOutputProcessor:
         data_dir: str = None,
         file_type: str = None,
         sentence_splitter_args: dict = {},
+        include_table: bool = True,
     ) -> None:
         # Load all files from the specified directory
         self.all_files = JsonFileLoader(data_dir).load()
         self.file_type = file_type
         # Process the loaded files into nodes
         self.sentence_splitter_args = sentence_splitter_args
+        self.include_table = include_table
         self.nodes = self.get_nodes()
 
     def get_nodes(self) -> list:
@@ -53,7 +56,7 @@ class AzureOutputProcessor:
                 ).nodes
                 nodes += paragraphs_nodes
             # Process table data
-            if tables_list:
+            if self.include_table and tables_list:
                 table_content_nodes = AzureTablesProcessor(
                     tables_list, file_name, self.file_type
                 ).nodes
