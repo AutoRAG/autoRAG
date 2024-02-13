@@ -3,22 +3,29 @@ indexer:
   build:
     data_dir: data/${app_name}/corpus
     index_dir: persist_dir/${app_name}/index
-    file_type: Guidance
-    data_processor: azure
-    node_parser:
-      type: sentence_splitter
-      args:
-        sentence_splitter:
-          chunk_size: 512
-          chunk_overlap: 20
+    pre_processor_cfg:
+      pre_processor_type: azure
+      azure_pre_processor_cfg:
+        file_type: Guidance
+        include_table: true
+      sentence_splitter_cfg:
+        chunk_size: 512
+        chunk_overlap: 20
+    post_processor_cfg: 
+      enable_node_expander: true
+      parent_metadata_field: document_name
 data_builder:
   generate_synthetic_query:
-    index_dir: ${indexer.build.index_dir} 
+    index_dir: ${indexer.build.index_dir}
+    from_parent_node: true
+    from_num_sources: 2
     prompt_template_path: data/${app_name}/synthetic_data/qa_gen_tmpl.txt
-    output_path: data/${app_name}/synthetic_data/synthetic_queries.json
     random_seed: 0
-    from_num_nodes: 2
     num_questions_per_chunk: 2
+    openai_model_name: gpt-4-1106-preview
+    json_output_path: data/${app_name}/synthetic_data/synthetic_queries.json
+    excel_output_path: data/${app_name}/synthetic_data/synthetic_queries.xlsx
+    metadata_field_to_save: document_name
   build_from_annotated_retrieval_data:
     annotated_data_path: data/${app_name}/annotated_data/annotated_example.xlsx
     index_dir: ${indexer.build.index_dir} 
@@ -37,7 +44,10 @@ synthesizer:
     index_dir: ${indexer.build.index_dir}
     app_description: ${app_name}
     enable_hyde: true
+    show_retrieved_nodes: true
+    enable_node_expander: true
+    openai_model_name: gpt-3.5-turbo-1106
     citation_cfg:
-      enable_cite: true
       citation_chunk_size: 512
+      citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
       similarity_top_k: 3
