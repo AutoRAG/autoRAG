@@ -40,8 +40,8 @@ class NodeExpander(BaseNodePostprocessor):
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[TextNode]:
         parent_node_scores = {}
-        '''The original retrieved node from a PDF file will be expanded to all the nodes in the same PDF file. In other words, 
-        if a node in a file is retrieved, all the nodes from this file will be returned.'''
+        """The original retrieved node from a PDF file will be expanded to all the nodes in the same PDF file. In other words, 
+        if a node in a file is retrieved, all the nodes from this file will be returned."""
         for node in nodes:
             parent_node_info = self.all_original_nodes[node.node.node_id].relationships[
                 NodeRelationship.PARENT
