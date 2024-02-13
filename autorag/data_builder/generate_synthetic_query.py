@@ -10,7 +10,6 @@ from llama_index.evaluation import (
     generate_question_context_pairs,
 )
 from llama_index.finetuning.embeddings.common import DEFAULT_QA_GENERATE_PROMPT_TMPL
-from autorag.retriever.post_processors.node_expander import NodeExpander
 from autorag.indexer.expanded_indexer import ExpandedIndexer
 import pandas as pd
 
