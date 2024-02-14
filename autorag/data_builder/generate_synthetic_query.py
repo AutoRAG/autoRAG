@@ -13,6 +13,8 @@ from llama_index.finetuning.embeddings.common import DEFAULT_QA_GENERATE_PROMPT_
 from autorag.indexer.expanded_indexer import ExpandedIndexer
 import pandas as pd
 
+QUERY_NAME_FIELD = "query"
+
 
 def save_embedding_qa_finetune_dataset_to_excel(
     qa_data, node_dict, metadata_field, output_path
@@ -22,7 +24,7 @@ def save_embedding_qa_finetune_dataset_to_excel(
     for query, doc_ids in qa_data.query_docid_pairs:
         query_doc_list.append(
             {
-                "query": query,
+                QUERY_NAME_FIELD: query,
                 metadata_field: node_dict[doc_ids[0]].metadata[metadata_field],
                 "doc": qa_data.corpus[doc_ids[0]],
             }

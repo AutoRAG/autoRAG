@@ -1,71 +1,15 @@
 import streamlit as st
-from llama_index import ServiceContext, PromptHelper
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 import hydra
-from llama_index.llms import OpenAI
-from llama_index.response_synthesizers import get_response_synthesizer, ResponseMode
 
-from llama_index.query_engine import CitationQueryEngine
 from llama_index.indices.query.query_transform import HyDEQueryTransform
-from llama_index.query_engine.transform_query_engine import (
-    TransformQueryEngine,
-)
-from llama_index.schema import MetadataMode
-from llama_index.prompts import PromptTemplate
-from llama_index.query_engine.citation_query_engine import (
-    CITATION_QA_TEMPLATE,
-    CITATION_REFINE_TEMPLATE,
-)
-import re
-from autorag.indexer.expanded_indexer import ExpandedIndexer
-
+from autorag.synthesizer.utils import init_query_engine, replace_with_identifiers
 
 # Create an instance of the GlobalHydra class
 global_hydra = hydra.core.global_hydra.GlobalHydra()
 
 # Call the clear() method on the instance
 global_hydra.clear()
-
-
-def init(index_dir, openai_model_name, citation_cfg, enable_node_expander=False):
-
-    expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
-
-    index = expanded_index.index
-    node_postprocessors = (
-        [expanded_index.node_expander] if enable_node_expander else None
-    )
-
-    llm = OpenAI(model=openai_model_name, temperature=0)
-    synthesizer_service_context = ServiceContext.from_defaults(llm=llm)
-
-    if citation_cfg.citation_qa_template_path:
-        with open(citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
-            citation_qa_template = PromptTemplate(f.read())
-    else:
-        citation_qa_template = CITATION_QA_TEMPLATE
-
-    response_synthesizer = get_response_synthesizer(
-        service_context=synthesizer_service_context,
-        text_qa_template=citation_qa_template,
-        refine_template=CITATION_REFINE_TEMPLATE,
-        response_mode=ResponseMode.COMPACT,
-        use_async=False,
-        streaming=True,
-    )
-
-    # service_context for the synthesizer is same as service_context of the index
-    query_engine = CitationQueryEngine.from_args(
-        index,
-        response_synthesizer=response_synthesizer,
-        similarity_top_k=citation_cfg.similarity_top_k,
-        # here we can control how granular citation sources are, the default is 512
-        citation_chunk_size=citation_cfg.citation_chunk_size,
-        node_postprocessors=node_postprocessors,
-        metadata_mode=MetadataMode.LLM,
-    )
-
-    return query_engine
 
 
 def show_feedback_component(message_id):
@@ -95,25 +39,6 @@ def show_feedback_component(message_id):
                 st.write("thanks!")
 
 
-def replace_with_identifiers(s):
-    # Initialize a counter
-    mapping = {}
-
-    # Define a function to use as replacement in re.sub
-    def replacement(match):
-        matched_str = int(match.group().lstrip("[").rstrip("]"))
-        if matched_str not in mapping:
-            mapping[matched_str] = len(mapping) + 1
-
-        return f"[{mapping[matched_str]}]"
-
-    # Define the regex pattern
-    pattern = r"\[\d+\]"
-    # Replace all matches of the pattern with the new identifiers
-    new_s = re.sub(pattern, replacement, s)
-    return new_s, mapping
-
-
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
     cur_cfg = cfg.synthesizer.render
@@ -124,12 +49,13 @@ def main(cfg: DictConfig):
     enable_node_expander = cur_cfg.enable_node_expander
     openai_model_name = cur_cfg.openai_model_name
     show_retrieved_nodes = cur_cfg.show_retrieved_nodes
-
-    query_engine = init(
+    streaming = True
+    query_engine = init_query_engine(
         index_dir,
         openai_model_name,
         citation_cfg,
         enable_node_expander,
+        streaming,
     )
     if enable_hyde:
         hyde = HyDEQueryTransform(include_original=True)
