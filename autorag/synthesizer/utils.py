@@ -1,3 +1,4 @@
+import streamlit as st
 from llama_index.query_engine.citation_query_engine import (
     CITATION_QA_TEMPLATE,
     CITATION_REFINE_TEMPLATE,
@@ -13,10 +14,11 @@ from llama_index.schema import MetadataMode
 from llama_index.query_engine import CitationQueryEngine
 
 
+@st.cache_resource
 def init_query_engine(
     index_dir,
     openai_model_name,
-    citation_cfg,
+    _citation_cfg,
     enable_node_expander=False,
     streaming=True,
 ):
@@ -31,8 +33,8 @@ def init_query_engine(
     llm = OpenAI(model=openai_model_name, temperature=0)
     synthesizer_service_context = ServiceContext.from_defaults(llm=llm)
 
-    if citation_cfg.citation_qa_template_path:
-        with open(citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
+    if _citation_cfg.citation_qa_template_path:
+        with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
             citation_qa_template = PromptTemplate(f.read())
     else:
         citation_qa_template = CITATION_QA_TEMPLATE
@@ -50,9 +52,9 @@ def init_query_engine(
     query_engine = CitationQueryEngine.from_args(
         index,
         response_synthesizer=response_synthesizer,
-        similarity_top_k=citation_cfg.similarity_top_k,
+        similarity_top_k=_citation_cfg.similarity_top_k,
         # here we can control how granular citation sources are, the default is 512
-        citation_chunk_size=citation_cfg.citation_chunk_size,
+        citation_chunk_size=_citation_cfg.citation_chunk_size,
         node_postprocessors=node_postprocessors,
         metadata_mode=MetadataMode.LLM,
     )

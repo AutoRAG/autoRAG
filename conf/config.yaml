@@ -11,6 +11,7 @@ indexer:
       sentence_splitter_cfg:
         chunk_size: 512
         chunk_overlap: 20
+      file_metadata: 
     post_processor_cfg: 
       enable_node_expander: true
       parent_metadata_field: document_name
@@ -45,6 +46,7 @@ synthesizer:
     app_description: ${app_name}
     enable_hyde: true
     show_retrieved_nodes: true
+    reference_url: false
     enable_node_expander: true
     openai_model_name: gpt-3.5-turbo-1106
     citation_cfg:

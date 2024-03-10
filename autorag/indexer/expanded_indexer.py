@@ -3,6 +3,7 @@ from llama_index import StorageContext, load_index_from_storage
 from llama_index import ServiceContext
 
 from .process.azure.output import AzureOutputProcessor
+from .process.utils.metadata import file_metadata_dict
 from autorag.retriever.post_processors.node_expander import NodeExpander
 import os, json
 
@@ -30,7 +31,13 @@ class ExpandedIndexer:
             ).nodes
             index = VectorStoreIndex(nodes)
         else:
-            documents = SimpleDirectoryReader(data_dir).load_data()
+            if pre_processor_cfg.file_metadata:
+                file_metadata = file_metadata_dict[pre_processor_cfg.file_metadata]
+            else:
+                file_metadata = None
+            documents = SimpleDirectoryReader(
+                data_dir, file_metadata=file_metadata
+            ).load_data()
             service_context = ServiceContext.from_defaults(
                 chunk_size=sentence_splitter_cfg.chunk_size,
                 chunk_overlap=sentence_splitter_cfg.chunk_overlap,

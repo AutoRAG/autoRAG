@@ -16,7 +16,7 @@ from autorag.data_builder.generate_synthetic_query import QUERY_NAME_FIELD
 
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def main(cfg: DictConfig):
-    cur_cfg = cfg.synthesizer.eval
+    cur_cfg = cfg.synthesizer.batch_generate
     index_dir = cur_cfg.index_dir
     citation_cfg = cur_cfg.citation_cfg
     enable_hyde = cur_cfg.enable_hyde
@@ -60,7 +60,19 @@ def main(cfg: DictConfig):
             reference += (
                 f"#### [{new_ref_id}]\n\n" + "\n\n" + ref_node.node.get_text() + "\n\n"
             )
-        save_list = {"query": ori_query, "answer": response, "reference": reference}
+
+        retrieved_nodes = ""
+        for ref_id, ref_node in enumerate(ans.source_nodes):
+            retrieved_nodes += (
+                f"#### [{ref_id}]\n\n" + "\n\n" + ref_node.node.get_text() + "\n\n"
+            )
+
+        save_list = {
+            "query": ori_query,
+            "answer": response,
+            "reference": reference,
+            "retrieved_nodes": retrieved_nodes,
+        }
         output_path = os.path.join(output_dir, f"query_{idx}.json")
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(save_list))

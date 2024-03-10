@@ -5,11 +5,11 @@ import hydra
 from llama_index.indices.query.query_transform import HyDEQueryTransform
 from autorag.synthesizer.utils import init_query_engine, replace_with_identifiers
 
-# Create an instance of the GlobalHydra class
-global_hydra = hydra.core.global_hydra.GlobalHydra()
+from hydra.core.global_hydra import GlobalHydra
 
-# Call the clear() method on the instance
-global_hydra.clear()
+if GlobalHydra.instance().is_initialized():
+    # Clear the current Hydra instance if it is initialized
+    GlobalHydra.instance().clear()
 
 
 def show_feedback_component(message_id):
@@ -49,6 +49,7 @@ def main(cfg: DictConfig):
     enable_node_expander = cur_cfg.enable_node_expander
     openai_model_name = cur_cfg.openai_model_name
     show_retrieved_nodes = cur_cfg.show_retrieved_nodes
+    reference_url = cur_cfg.reference_url
     streaming = True
     query_engine = init_query_engine(
         index_dir,
@@ -60,13 +61,13 @@ def main(cfg: DictConfig):
     if enable_hyde:
         hyde = HyDEQueryTransform(include_original=True)
 
-    st.header("Chat with Your Documents (only support single-turn conversation now)")
+    st.header(f"{app_description.upper()} Chatbot Demo")
 
     if "messages" not in st.session_state.keys():  # Initialize the chat message history
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": f"Ask me a question about {app_description}!",
+                "content": f"Hello, how can I help you!",
             }
         ]
 
@@ -85,8 +86,8 @@ def main(cfg: DictConfig):
             st.write(message["content"])
 
         # show feedback component when the message is sent by the assistant
-        if message["role"] == "assistant":
-            show_feedback_component(message_id)
+        # if message["role"] == "assistant":
+        #    show_feedback_component(message_id)
 
     # If last message is not from assistant, generate a new response
     if st.session_state.messages[-1]["role"] != "assistant":
@@ -98,7 +99,7 @@ def main(cfg: DictConfig):
                 spinner_msg = "Generating hypothetical response"
                 with st.spinner(spinner_msg):
                     prompt = hyde(prompt)
-                    full_response = f"=== Non-RAG response ===\n\n{prompt.embedding_strs[0]}\n\n=== RAG response ===\n\n"
+                    full_response = f"=== Raw GPT ({openai_model_name}) response ===\n\n{prompt.embedding_strs[0]}\n\n=== AutoRAG response ===\n\n"
 
             raw_rag_response = ""
             response = query_engine.query(prompt)
@@ -111,12 +112,16 @@ def main(cfg: DictConfig):
             full_response += "\n\n### References\n\n"
             for raw_ref_id, new_ref_id in mapping.items():
                 ref_node = response.source_nodes[raw_ref_id - 1]
-                full_response += (
-                    f"#### [{new_ref_id}]\n\n"
-                    + "\n\n"
-                    + ref_node.node.get_text()
-                    + "\n\n"
-                )
+                if reference_url:
+                    url = ref_node.metadata["url"].strip("\n")
+                    full_response += f"[{new_ref_id}] [{url}]({url})\n\n"
+                else:
+                    full_response += (
+                        f"#### [{new_ref_id}]\n\n"
+                        + "\n\n"
+                        + ref_node.node.get_text()
+                        + "\n\n"
+                    )
 
             message_placeholder.markdown(full_response)
 
@@ -136,7 +141,7 @@ def main(cfg: DictConfig):
         st.session_state.messages.append(message)  # Add response to message history
 
         # Show feedback components to make sure it is displayed after the message is fully returned
-        show_feedback_component(len(st.session_state.messages) - 1)
+        # show_feedback_component(len(st.session_state.messages) - 1)
 
 
 if __name__ == "__main__":
