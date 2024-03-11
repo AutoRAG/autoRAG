@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-
+from llama_index.core.query_engine import NLSQLTableQueryEngine
 from llama_index.core import SQLDatabase
 from llama_index.llms.openai import OpenAI
 
@@ -21,12 +21,12 @@ df_test = pd.read_csv('airbnb_ny_filter.csv', delimiter=',', encoding='utf-8',lo
 # for col in df_test.columns:
 #     print(col, df_test[col].apply(type).unique())
 
-
-#df_test =  df_test.head(5)
+df_test.columns = [col.replace("neighbourhood", "neighborhood") if "neighbourhood" in col else col for col in df_test.columns]
+columns = df_test.columns
+# # df_test =  df_test.head(200)
 engine = create_engine("sqlite:///airbnb_ny.db")
 metadata_obj = MetaData()
 
-columns = df_test.columns
 # create city SQL table
 table_name = "airbnb_ny"
 
@@ -58,8 +58,11 @@ for row in rows:
             cursor = connection.execute(stmt)
         except Exception as e:
             error.append(e)
-            #print("An error occurred:", e)
-           # print("The problematic row is:", row)
+            print("An error occurred:", e)
+            print("The problematic row is:", row)
 if len(error)==0:
     print("==================rows inserted==================")
+else:
+    print(len(error))
+
 
