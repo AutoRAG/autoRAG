@@ -101,7 +101,7 @@ def main(cfg: DictConfig):
             condense_prompt_template = DEFAULT_CONDENSE_PROMPT
             chat_history_str = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[:-1]])
             prompt = llm.predict(condense_prompt_template, question=prompt, chat_history=chat_history_str)
-            st.write(f'new question\n\n{prompt}')
+            st.write(f'(rewritten query)\n\n{prompt}')
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
@@ -151,7 +151,15 @@ def main(cfg: DictConfig):
 
         message = {"role": "assistant", "content": full_response}
         st.session_state.messages.append(message)  # Add response to message history
-
+        def reset_conversation():
+            st.session_state.messages = [
+                {
+                    "role": "assistant",
+                    "content": f"Hello, how can I help you!",
+                }
+            ]
+            st.rerun()
+        st.button('Clear conversation', on_click=reset_conversation)
         # Show feedback components to make sure it is displayed after the message is fully returned
         # show_feedback_component(len(st.session_state.messages) - 1)
 
