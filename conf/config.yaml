@@ -49,6 +49,7 @@ synthesizer:
     reference_url: false
     enable_node_expander: true
     openai_model_name: gpt-3.5-turbo-1106
+    include_historical_messages: true
     citation_cfg:
       citation_chunk_size: 512
       citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt

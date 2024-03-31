@@ -6,7 +6,6 @@ from llama_index.query_engine.citation_query_engine import (
 import re
 from autorag.indexer.expanded_indexer import ExpandedIndexer
 from llama_index import ServiceContext
-from llama_index.llms import OpenAI
 from llama_index.response_synthesizers import get_response_synthesizer, ResponseMode
 
 from llama_index.prompts import PromptTemplate
@@ -17,7 +16,7 @@ from llama_index.query_engine import CitationQueryEngine
 @st.cache_resource
 def init_query_engine(
     index_dir,
-    openai_model_name,
+    _llm,
     _citation_cfg,
     enable_node_expander=False,
     streaming=True,
@@ -30,8 +29,7 @@ def init_query_engine(
         [expanded_index.node_expander] if enable_node_expander else None
     )
 
-    llm = OpenAI(model=openai_model_name, temperature=0)
-    synthesizer_service_context = ServiceContext.from_defaults(llm=llm)
+    synthesizer_service_context = ServiceContext.from_defaults(llm=_llm)
 
     if _citation_cfg.citation_qa_template_path:
         with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
@@ -60,7 +58,6 @@ def init_query_engine(
     )
 
     return query_engine
-
 
 def replace_with_identifiers(s):
     # Initialize a counter

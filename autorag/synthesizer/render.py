@@ -1,10 +1,11 @@
 import streamlit as st
+from llama_index.llms import OpenAI
 from omegaconf import DictConfig
 import hydra
 
 from llama_index.indices.query.query_transform import HyDEQueryTransform
 from autorag.synthesizer.utils import init_query_engine, replace_with_identifiers
-
+from llama_index.chat_engine.condense_question import DEFAULT_PROMPT as DEFAULT_CONDENSE_PROMPT
 from hydra.core.global_hydra import GlobalHydra
 
 if GlobalHydra.instance().is_initialized():
@@ -50,10 +51,13 @@ def main(cfg: DictConfig):
     openai_model_name = cur_cfg.openai_model_name
     show_retrieved_nodes = cur_cfg.show_retrieved_nodes
     reference_url = cur_cfg.reference_url
+    include_historical_messages = cur_cfg.include_historical_messages
     streaming = True
+
+    llm = OpenAI(model=openai_model_name, temperature=0)
     query_engine = init_query_engine(
         index_dir,
-        openai_model_name,
+        llm,
         citation_cfg,
         enable_node_expander,
         streaming,
@@ -89,8 +93,15 @@ def main(cfg: DictConfig):
         # if message["role"] == "assistant":
         #    show_feedback_component(message_id)
 
+
     # If last message is not from assistant, generate a new response
     if st.session_state.messages[-1]["role"] != "assistant":
+        # condense historical message into one question
+        if include_historical_messages and len(st.session_state.messages) > 2:
+            condense_prompt_template = DEFAULT_CONDENSE_PROMPT
+            chat_history_str = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[:-1]])
+            prompt = llm.predict(condense_prompt_template, question=prompt, chat_history=chat_history_str)
+            st.write(f'new question\n\n{prompt}')
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
@@ -109,7 +120,8 @@ def main(cfg: DictConfig):
                 message_placeholder.markdown(full_response + rag_response + "▌")
             full_response += rag_response
 
-            full_response += "\n\n### References\n\n"
+            if mapping:
+                full_response += "\n\n### References\n\n"
             for raw_ref_id, new_ref_id in mapping.items():
                 ref_node = response.source_nodes[raw_ref_id - 1]
                 if reference_url:
