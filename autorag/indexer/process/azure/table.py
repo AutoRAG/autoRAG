@@ -1,5 +1,7 @@
 from typing import List, Dict, Any, Optional
 from llama_index.schema import TextNode
+from nltk.tokenize import word_tokenize
+
 
 UNWANTED_CONTENT: dict[str, Any] = {
     "+\n:selected:": "+",
@@ -16,6 +18,8 @@ class AzureTablesProcessor:
     :param azure_tables_list: The list of tables returned from Azure.
     :param file_name: The name of the file.
     :param file_type: The type of the file.
+    :param by_token: Whether to process tables by token or by table row. if False, by row. 
+    :param token_limit: The maximum number of tokens in a single TextNode (usually limited by model)
     """
 
     def __init__(
@@ -23,12 +27,16 @@ class AzureTablesProcessor:
         azure_tables_list: list[dict[str, Any]] = [],
         file_name: str = None,
         file_type: str = None,
+        by_token: bool = True,
+        token_limit: int = 3000
     ) -> None:
 
         # Initialize the AzureTablesProcessor class.
         self.azure_tables_list = azure_tables_list
         self.file_name = file_name
         self.file_type = file_type
+        self.by_token = by_token
+        self.token_limit = token_limit
         self.table_dataframes, self.table_pages = self.get_table_dataframes()
         self.nodes = self.get_table_nodes()
 
@@ -96,28 +104,100 @@ class AzureTablesProcessor:
 
     def get_table_nodes(self) -> list[TextNode]:
         """
-        Iterates through all tables stored in self.table_dataframes. For every
-        row in each table, a TextNode object is created. The text of the table
-        row is converted to a string and set as the text of the node.
+        Depending on the value of self.by_token, creates a list of TextNode objects from 
+        the table dataframes stored in self.table_dataframes. 
 
-        :return: A list of TextNode objects each representing a row in the tables.
+        If self.by_token is True, the method treats each entire table 
+        as a single unit, spliting table rows text by token limit. 
+
+        If self.by_token is False, the method iterates over each 
+        row in every table, creating a TextNode for each row with the row's data 
+        as its text.
+
+        :return: A list of TextNode objects, each representing either a single row or an 
+        entire table from the processed table dataframes, depending on the 
+        configuration of the processor.
         """
         nodes = []
-        for idx in range(len(self.table_dataframes)):
-            table_df = self.table_dataframes[idx]
-            table_page = self.table_pages[idx]
-            for table_row_text in table_df:
-                # Create a new document for each page
-                new_node = TextNode(
-                    text=str(table_row_text),
-                    metadata={
-                        "page_number": table_page,
-                        "document_name": self.file_name,
-                        "document_type": self.file_type,
-                    },
-                )
-                nodes.append(new_node)
+        if self.by_token:
+            for idx, table_df in enumerate(self.table_dataframes):
+                table_page = self.table_pages[idx]
+                # split the table dataframe based on token limit.
+                groups_of_rows, table_title = self.split_table_into_groups_by_token_limit(table_df)
+
+                # Create a TextNode for each group of rows.
+                for group in groups_of_rows:
+                    new_node = TextNode(
+                        text=str(group),
+                        metadata={
+                            "from_table": table_title,
+                            "page_number": table_page,
+                            "document_name": self.file_name,
+                            "document_type": self.file_type,
+                        },
+                    )
+                    nodes.append(new_node)
+        else:
+            for idx, table_df in enumerate(self.table_dataframes):
+                table_page = self.table_pages[idx]
+                for table_row_text in table_df:
+                    # Create a new document for each page
+                    new_node = TextNode(
+                        text=str(table_row_text),
+                        metadata={
+                            "page_number": table_page,
+                            "document_name": self.file_name,
+                            "document_type": self.file_type,
+                        },
+                    )
+                    nodes.append(new_node)
         return nodes
+    
+    def split_table_into_groups_by_token_limit(self, table_df):
+        """
+        Splits a table dataframe into groups of rows based on a token length limit.
+        
+        :param table_df (list): The table dataframe, a list of row dictionaries.
+        :param char_limit (int): The maximum character length for each group.
+            
+        :return groups_of_rows (list): A list of groups, where each group is a list of modified rows.
+        :return table_title (str): The 'from' value extracted from the rows, if any.
+        """
+        groups_of_rows = []
+        current_group = []
+        current_group_token_count = 0
+        table_title = None
+
+        for row in table_df:
+            # Capture the 'from' value if not already done.
+            if 'from' in row and table_title is None:
+                table_title = row['from']
+            
+            # Create a modified row without the 'from' key
+            modified_row = {key: value for key, value in row.items() if key != 'from'}
+            # Convert the modified row to a string
+            modified_row_str = str(modified_row)
+            # Count tokens by splitting the string on whitespace
+            modified_row_tokens = word_tokenize(modified_row_str)
+            modified_row_token_count = len(modified_row_tokens)
+            
+            # Check if adding the row exceeds the token limit
+            if current_group_token_count + modified_row_token_count > self.token_limit:
+                # Start a new group if the current one exceeds the limit
+                groups_of_rows.append(current_group)
+                current_group = [modified_row]
+                current_group_token_count = modified_row_token_count
+            else:
+                # Otherwise, add the row to the current group and update the token count
+                current_group.append(modified_row)
+                current_group_token_count += modified_row_token_count
+        
+        # Add the last group if it has any rows
+        if current_group:
+            groups_of_rows.append(current_group)
+        
+        return groups_of_rows, table_title
+
 
     def get_table_page_number(self, data: Dict[str, Any]) -> int:
         """

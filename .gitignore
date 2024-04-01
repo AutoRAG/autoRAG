@@ -157,3 +157,6 @@ persist_dir/
 
 # data
 data/
+
+# Docker
+Dockerfile
