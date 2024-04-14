@@ -25,7 +25,9 @@ class ExpandedIndexer:
         sentence_splitter_cfg = pre_processor_cfg.sentence_splitter_cfg
         if pre_processor_cfg.pre_processor_type == "azure":
             file_type = pre_processor_cfg.azure_pre_processor_cfg.file_type
-            table_process_cfg = pre_processor_cfg.azure_pre_processor_cfg.table_process_cfg
+            table_process_cfg = (
+                pre_processor_cfg.azure_pre_processor_cfg.table_process_cfg
+            )
             nodes = AzureOutputProcessor(
                 data_dir, file_type, sentence_splitter_cfg, table_process_cfg
             ).nodes

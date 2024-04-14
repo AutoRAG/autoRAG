@@ -32,7 +32,7 @@ class AzureOutputProcessor:
         data_dir: str = None,
         file_type: str = None,
         sentence_splitter_args: dict = {},
-        table_process_cfg: dict = {}
+        table_process_cfg: dict = {},
     ) -> None:
         # Load all files from the specified directory
         self.all_files = JsonFileLoader(data_dir).load()
@@ -64,11 +64,11 @@ class AzureOutputProcessor:
             # Process table data
             if self.include_table and tables_list:
                 table_content_nodes = AzureTablesProcessor(
-                    tables_list, 
-                    file_name, 
-                    self.file_type, 
+                    tables_list,
+                    file_name,
+                    self.file_type,
                     self.by_token,
-                    self.token_limit
+                    self.token_limit,
                 ).nodes
                 nodes += table_content_nodes
 

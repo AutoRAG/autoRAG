@@ -5,7 +5,9 @@ import hydra
 
 from llama_index.indices.query.query_transform import HyDEQueryTransform
 from autorag.synthesizer.utils import init_query_engine, replace_with_identifiers
-from llama_index.chat_engine.condense_question import DEFAULT_PROMPT as DEFAULT_CONDENSE_PROMPT
+from llama_index.chat_engine.condense_question import (
+    DEFAULT_PROMPT as DEFAULT_CONDENSE_PROMPT,
+)
 from hydra.core.global_hydra import GlobalHydra
 
 if GlobalHydra.instance().is_initialized():
@@ -93,15 +95,18 @@ def main(cfg: DictConfig):
         # if message["role"] == "assistant":
         #    show_feedback_component(message_id)
 
-
     # If last message is not from assistant, generate a new response
     if st.session_state.messages[-1]["role"] != "assistant":
         # condense historical message into one question
         if include_historical_messages and len(st.session_state.messages) > 2:
             condense_prompt_template = DEFAULT_CONDENSE_PROMPT
-            chat_history_str = "\n".join([f"{m['role']}: {m['content']}" for m in st.session_state.messages[:-1]])
-            prompt = llm.predict(condense_prompt_template, question=prompt, chat_history=chat_history_str)
-            st.write(f'(rewritten query)\n\n{prompt}')
+            chat_history_str = "\n".join(
+                [f"{m['role']}: {m['content']}" for m in st.session_state.messages[:-1]]
+            )
+            prompt = llm.predict(
+                condense_prompt_template, question=prompt, chat_history=chat_history_str
+            )
+            st.write(f"(rewritten query)\n\n{prompt}")
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
             full_response = ""
@@ -151,6 +156,7 @@ def main(cfg: DictConfig):
 
         message = {"role": "assistant", "content": full_response}
         st.session_state.messages.append(message)  # Add response to message history
+
         def reset_conversation():
             st.session_state.messages = [
                 {
@@ -159,7 +165,8 @@ def main(cfg: DictConfig):
                 }
             ]
             st.rerun()
-        st.button('Clear conversation', on_click=reset_conversation)
+
+        st.button("Clear conversation", on_click=reset_conversation)
         # Show feedback components to make sure it is displayed after the message is fully returned
         # show_feedback_component(len(st.session_state.messages) - 1)
 

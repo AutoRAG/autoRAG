@@ -18,7 +18,7 @@ class AzureTablesProcessor:
     :param azure_tables_list: The list of tables returned from Azure.
     :param file_name: The name of the file.
     :param file_type: The type of the file.
-    :param by_token: Whether to process tables by token or by table row. if False, by row. 
+    :param by_token: Whether to process tables by token or by table row. if False, by row.
     :param token_limit: The maximum number of tokens in a single TextNode (usually limited by model)
     """
 
@@ -28,7 +28,7 @@ class AzureTablesProcessor:
         file_name: str = None,
         file_type: str = None,
         by_token: bool = True,
-        token_limit: int = 3000
+        token_limit: int = 3000,
     ) -> None:
 
         # Initialize the AzureTablesProcessor class.
@@ -104,18 +104,18 @@ class AzureTablesProcessor:
 
     def get_table_nodes(self) -> list[TextNode]:
         """
-        Depending on the value of self.by_token, creates a list of TextNode objects from 
-        the table dataframes stored in self.table_dataframes. 
+        Depending on the value of self.by_token, creates a list of TextNode objects from
+        the table dataframes stored in self.table_dataframes.
 
-        If self.by_token is True, the method treats each entire table 
-        as a single unit, spliting table rows text by token limit. 
+        If self.by_token is True, the method treats each entire table
+        as a single unit, spliting table rows text by token limit.
 
-        If self.by_token is False, the method iterates over each 
-        row in every table, creating a TextNode for each row with the row's data 
+        If self.by_token is False, the method iterates over each
+        row in every table, creating a TextNode for each row with the row's data
         as its text.
 
-        :return: A list of TextNode objects, each representing either a single row or an 
-        entire table from the processed table dataframes, depending on the 
+        :return: A list of TextNode objects, each representing either a single row or an
+        entire table from the processed table dataframes, depending on the
         configuration of the processor.
         """
         nodes = []
@@ -123,7 +123,9 @@ class AzureTablesProcessor:
             for idx, table_df in enumerate(self.table_dataframes):
                 table_page = self.table_pages[idx]
                 # split the table dataframe based on token limit.
-                groups_of_rows, table_title = self.split_table_into_groups_by_token_limit(table_df)
+                groups_of_rows, table_title = (
+                    self.split_table_into_groups_by_token_limit(table_df)
+                )
 
                 # Create a TextNode for each group of rows.
                 for group in groups_of_rows:
@@ -152,14 +154,14 @@ class AzureTablesProcessor:
                     )
                     nodes.append(new_node)
         return nodes
-    
+
     def split_table_into_groups_by_token_limit(self, table_df):
         """
         Splits a table dataframe into groups of rows based on a token length limit.
-        
+
         :param table_df (list): The table dataframe, a list of row dictionaries.
         :param char_limit (int): The maximum character length for each group.
-            
+
         :return groups_of_rows (list): A list of groups, where each group is a list of modified rows.
         :return table_title (str): The 'from' value extracted from the rows, if any.
         """
@@ -170,17 +172,17 @@ class AzureTablesProcessor:
 
         for row in table_df:
             # Capture the 'from' value if not already done.
-            if 'from' in row and table_title is None:
-                table_title = row['from']
-            
+            if "from" in row and table_title is None:
+                table_title = row["from"]
+
             # Create a modified row without the 'from' key
-            modified_row = {key: value for key, value in row.items() if key != 'from'}
+            modified_row = {key: value for key, value in row.items() if key != "from"}
             # Convert the modified row to a string
             modified_row_str = str(modified_row)
             # Count tokens by splitting the string on whitespace
             modified_row_tokens = word_tokenize(modified_row_str)
             modified_row_token_count = len(modified_row_tokens)
-            
+
             # Check if adding the row exceeds the token limit
             if current_group_token_count + modified_row_token_count > self.token_limit:
                 # Start a new group if the current one exceeds the limit
@@ -191,13 +193,12 @@ class AzureTablesProcessor:
                 # Otherwise, add the row to the current group and update the token count
                 current_group.append(modified_row)
                 current_group_token_count += modified_row_token_count
-        
+
         # Add the last group if it has any rows
         if current_group:
             groups_of_rows.append(current_group)
-        
-        return groups_of_rows, table_title
 
+        return groups_of_rows, table_title
 
     def get_table_page_number(self, data: Dict[str, Any]) -> int:
         """

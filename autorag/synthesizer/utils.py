@@ -59,6 +59,7 @@ def init_query_engine(
 
     return query_engine
 
+
 def replace_with_identifiers(s):
     # Initialize a counter
     mapping = {}
