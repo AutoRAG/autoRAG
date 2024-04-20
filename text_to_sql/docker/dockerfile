@@ -1,0 +1,26 @@
+# Use an official Python runtime as a parent image
+FROM ubuntu:20.04
+
+# Set the working directory in the container to /app
+WORKDIR /app
+
+# Add the current directory contents into the container at /app
+ADD . /app
+
+# Install Miniconda
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    wget
+RUN mkdir -p ~/miniconda3 
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+RUN bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+RUN rm -rf ~/miniconda3/miniconda.sh
+ENV PATH="/root/miniconda3/bin:${PATH}"
+RUN conda init bash
+
+# Create Conda environment from environment.yml file
+RUN conda env create -f environment.yml
+
+# Ensure the Conda environment is activated when the container starts
+CMD ["bash", "-c", "source activate assistant"]
