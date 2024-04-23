@@ -5,6 +5,10 @@ from llama_index.query_engine.citation_query_engine import (
 )
 import re
 from autorag.indexer.expanded_indexer import ExpandedIndexer
+from autorag.retriever.google_and_vector_retriever import (
+    GoogleAndVectorRetriever,
+    GoogleRetriever,
+)
 from llama_index import ServiceContext
 from llama_index.response_synthesizers import get_response_synthesizer, ResponseMode
 
@@ -21,10 +25,14 @@ def init_query_engine(
     enable_node_expander=False,
     streaming=True,
 ):
-
     expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
 
     index = expanded_index.index
+    retriever = index.as_retriever(similarity_top_k=_citation_cfg.similarity_top_k)
+    if _citation_cfg.google_search_topk > 0:
+        google_retriever = GoogleRetriever(topk=_citation_cfg.google_search_topk)
+        retriever = GoogleAndVectorRetriever(retriever, google_retriever)
+
     node_postprocessors = (
         [expanded_index.node_expander] if enable_node_expander else None
     )
@@ -47,11 +55,10 @@ def init_query_engine(
     )
 
     # service_context for the synthesizer is same as service_context of the index
-    query_engine = CitationQueryEngine.from_args(
-        index,
+    query_engine = CitationQueryEngine(
+        retriever=retriever,
         response_synthesizer=response_synthesizer,
-        similarity_top_k=_citation_cfg.similarity_top_k,
-        # here we can control how granular citation sources are, the default is 512
+        callback_manager=index.service_context.callback_manager,
         citation_chunk_size=_citation_cfg.citation_chunk_size,
         node_postprocessors=node_postprocessors,
         metadata_mode=MetadataMode.LLM,

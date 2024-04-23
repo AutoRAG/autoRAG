@@ -22,6 +22,12 @@ This repo uses [Hydra](https://hydra.cc/docs/intro/) to manage the configs. Plea
 export OPENAI_API_KEY=<YOUR_OPENAI_KEY>
 ```
 
+### If you want to use Google Search as part of the retrievval, please setup google search api key
+```
+export GOOGLE_SEARCH_API_KEY=<YOUR_GOOGLE_SEARCH_API_KEY>
+export GOOGLE_SEARCH_CSE_ID=<YOUR_GOOGLE_SEARCH_CSE_ID>
+```
+
 ### Build an index from corpus
 Upload your documents where the answers can be retrieved from to `data/<your_app_name>/corpus` folder.  
 ```

@@ -9,6 +9,7 @@ from llama_index.chat_engine.condense_question import (
     DEFAULT_PROMPT as DEFAULT_CONDENSE_PROMPT,
 )
 from hydra.core.global_hydra import GlobalHydra
+from llama_index.schema import MetadataMode
 
 if GlobalHydra.instance().is_initialized():
     # Clear the current Hydra instance if it is initialized
@@ -136,7 +137,7 @@ def main(cfg: DictConfig):
                     full_response += (
                         f"#### [{new_ref_id}]\n\n"
                         + "\n\n"
-                        + ref_node.node.get_text()
+                        + ref_node.node.get_content(metadata_mode=MetadataMode.LLM)
                         + "\n\n"
                     )
 

@@ -44,6 +44,21 @@ retriever:
       - "mrr"
       - "hit_rate"
 synthesizer:
+  batch_generate:
+    index_dir: ${indexer.build.index_dir}
+    enable_hyde: true
+    enable_node_expander: true
+    openai_model_name: gpt-3.5-turbo-1106
+    citation_cfg:
+      citation_chunk_size: 512
+      citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
+      similarity_top_k: 3
+      google_search_topk: 3
+    excel_input_path: ${data_builder.generate_synthetic_query.excel_output_path}
+    output_dir: data/${app_name}/output
+    query_field_name:
+    max_num_queries:
+    start_query_idx: 0
   render:
     index_dir: ${indexer.build.index_dir}
     app_description: ${app_name}
@@ -57,17 +72,4 @@ synthesizer:
       citation_chunk_size: 512
       citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
       similarity_top_k: 3
-  batch_generate:
-    index_dir: ${indexer.build.index_dir}
-    enable_hyde: true
-    enable_node_expander: true
-    openai_model_name: gpt-3.5-turbo-1106
-    citation_cfg:
-      citation_chunk_size: 512
-      citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
-      similarity_top_k: 3
-    excel_input_path: ${data_builder.generate_synthetic_query.excel_output_path}
-    output_dir: data/${app_name}/output
-    query_field_name:
-    max_num_queries:
-    start_query_idx: 0
+      google_search_topk: 3
