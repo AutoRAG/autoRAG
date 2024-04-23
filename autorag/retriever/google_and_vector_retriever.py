@@ -5,7 +5,7 @@ from llama_index.core.base_retriever import BaseRetriever
 import requests
 from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
-from typing import Any, Dict, List, Optional
+from typing import List
 import re
 
 
@@ -34,7 +34,7 @@ class GoogleRetriever(BaseRetriever):
             soup = BeautifulSoup(response.text, "html.parser")
             text = soup.get_text()
             text = re.sub(r"\s+", " ", text)
-            text = re.sub(r"\n+", "n", text)
+            text = re.sub(r"\n+", "\n", text)
             return text
         except requests.RequestException as e:
             print(f"Failed to retrieve {url}: {e}")
