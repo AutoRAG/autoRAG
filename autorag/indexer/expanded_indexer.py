@@ -1,6 +1,9 @@
 from llama_index import VectorStoreIndex, SimpleDirectoryReader
 from llama_index import StorageContext, load_index_from_storage
 from llama_index import ServiceContext
+from llama_index.readers.base import BaseReader
+from llama_index.schema import Document
+
 
 from .process.azure.output import AzureOutputProcessor
 from .process.utils.metadata import file_metadata_dict
@@ -10,6 +13,13 @@ import os, json
 EMBED_MODEL_CONFIG_PATH = "embed_model_config.json"
 STORAGE_BASENAME = "storage_context"
 EXPANDED_NODE_BASENAME = "expanded_nodes"
+
+class TxtFileReader(BaseReader):
+    def load_data(self, file, extra_info=None):
+        with open(file, "r") as f:
+            text = f.read()
+        # load_data returns a list of Document objects
+        return [Document(text=text, extra_info=extra_info or {})]
 
 
 class ExpandedIndexer:
@@ -39,6 +49,7 @@ class ExpandedIndexer:
                 file_metadata = None
             documents = SimpleDirectoryReader(
                 data_dir, file_metadata=file_metadata
+                #data_dir, file_metadata=file_metadata, file_extractor={".txt": TxtFileReader()}
             ).load_data()
             service_context = ServiceContext.from_defaults(
                 chunk_size=sentence_splitter_cfg.chunk_size,
