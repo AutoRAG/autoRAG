@@ -56,19 +56,36 @@ def main(cfg: DictConfig):
     reference_url = cur_cfg.reference_url
     include_historical_messages = cur_cfg.include_historical_messages
     streaming = True
+        
 
     llm = OpenAI(model=openai_model_name, temperature=0)
-    query_engine = init_query_engine(
+    query_engine_med_qa = init_query_engine(
         index_dir,
         llm,
         citation_cfg,
         enable_node_expander,
         streaming,
     )
-    if enable_hyde:
+    
+    query_engine_semantic_scholar = init_query_engine(
+        index_dir,
+        llm,
+        citation_cfg,
+        enable_node_expander,
+        streaming,
+        semantic_scholar=True,
+    )
+    st.header(f"{app_description.upper()} Chatbot Demo")
+    
+    semantic_scholar = st.toggle("Use Semantic Scholar")
+    if semantic_scholar:
+        query_engine = query_engine_semantic_scholar
+    else:
+        query_engine = query_engine_med_qa
+    
+    if enable_hyde and not semantic_scholar:
         hyde = HyDEQueryTransform(include_original=True)
 
-    st.header(f"{app_description.upper()} Chatbot Demo")
 
     if "messages" not in st.session_state.keys():  # Initialize the chat message history
         st.session_state.messages = [
@@ -112,13 +129,14 @@ def main(cfg: DictConfig):
             message_placeholder = st.empty()
             full_response = ""
 
-            if enable_hyde:
+            if enable_hyde and not semantic_scholar:
                 spinner_msg = "Generating hypothetical response"
                 with st.spinner(spinner_msg):
                     prompt = hyde(prompt)
                     full_response = f"=== Raw GPT ({openai_model_name}) response ===\n\n{prompt.embedding_strs[0]}\n\n=== AutoRAG response ===\n\n"
 
             raw_rag_response = ""
+            print(prompt)
             response = query_engine.query(prompt)
             for ans in response.response_gen:
                 raw_rag_response += ans
