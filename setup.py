@@ -14,5 +14,7 @@ setup(
         "llama_index==0.9.28.post2",
         "streamlit==1.29.0",
         "pdftotext==2.2.2",
+        "websockets==11.0.2",
+        "diskcache 5.6.3",
     ],
 )

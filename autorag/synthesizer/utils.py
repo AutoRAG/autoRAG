@@ -16,7 +16,9 @@ from llama_index.response_synthesizers import get_response_synthesizer, Response
 from llama_index.prompts import PromptTemplate
 from llama_index.schema import MetadataMode
 from llama_index.query_engine import CitationQueryEngine
+import diskcache as dc
 
+cache = dc.Cache('cache_directory')
 
 @st.cache_resource
 def init_query_engine(
@@ -67,6 +69,55 @@ def init_query_engine(
         retriever=retriever,
         response_synthesizer=response_synthesizer,
         callback_manager=query_engine_callback_manager,
+        citation_chunk_size=_citation_cfg.citation_chunk_size,
+        node_postprocessors=node_postprocessors,
+        metadata_mode=MetadataMode.LLM,
+    )
+
+    return query_engine
+
+@cache.memoize()
+def ws_query_engine(
+    index_dir,
+    _llm,
+    _citation_cfg,
+    enable_node_expander=False,
+    streaming=True,
+):
+    expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
+
+    index = expanded_index.index
+
+    retriever = index.as_retriever(similarity_top_k=_citation_cfg.similarity_top_k)
+    if _citation_cfg.google_search_topk > 0:
+        google_retriever = GoogleRetriever(topk=_citation_cfg.google_search_topk)
+        retriever = GoogleAndVectorRetriever(retriever, google_retriever)
+
+    node_postprocessors = (
+        [expanded_index.node_expander] if enable_node_expander else None
+    )
+
+    synthesizer_service_context = ServiceContext.from_defaults(llm=_llm)
+
+    if _citation_cfg.citation_qa_template_path:
+        with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
+            citation_qa_template = PromptTemplate(f.read())
+    else:
+        citation_qa_template = CITATION_QA_TEMPLATE
+
+    response_synthesizer = get_response_synthesizer(
+        service_context=synthesizer_service_context,
+        text_qa_template=citation_qa_template,
+        refine_template=CITATION_REFINE_TEMPLATE,
+        response_mode=ResponseMode.COMPACT,
+        use_async=False,
+        streaming=streaming,
+    )
+
+    query_engine = CitationQueryEngine(
+        retriever=retriever,
+        response_synthesizer=response_synthesizer,
+        callback_manager=index.service_context.callback_manager,
         citation_chunk_size=_citation_cfg.citation_chunk_size,
         node_postprocessors=node_postprocessors,
         metadata_mode=MetadataMode.LLM,

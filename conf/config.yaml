@@ -1,4 +1,4 @@
-app_name: example
+app_name: rag
 indexer:
   build:
     data_dir: data/${app_name}/corpus
@@ -72,4 +72,24 @@ synthesizer:
       citation_chunk_size: 512
       citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
       similarity_top_k: 3
-      google_search_topk: 3      
+      google_search_topk: 3
+  websocket_server:
+    index_dir: ${indexer.build.index_dir}
+    app_description: ${app_name}
+    enable_hyde: true
+    show_retrieved_nodes: true
+    reference_url: false
+    enable_node_expander: true
+    openai_model_name: gpt-3.5-turbo-1106
+    include_historical_messages: true
+    citation_cfg:
+      citation_chunk_size: 512
+      citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
+      similarity_top_k: 3
+      google_search_topk: 3
+server:
+  host: localhost
+  port: 8765
+cache:
+  directory: cache_directory
+  timeout: 600
