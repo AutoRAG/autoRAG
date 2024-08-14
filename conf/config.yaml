@@ -1,4 +1,4 @@
-app_name: rag
+app_name: example
 indexer:
   build:
     data_dir: data/${app_name}/corpus
