@@ -77,7 +77,7 @@ def main(cfg: DictConfig):
     )
     st.header(f"{app_description.upper()} Chatbot Demo")
     
-    semantic_scholar = st.toggle("Use Semantic Scholar")
+    semantic_scholar = st.toggle("Use Semantic Scholar", value=True)
     if semantic_scholar:
         query_engine = query_engine_semantic_scholar
     else:
