@@ -2,6 +2,7 @@ import streamlit as st
 from llama_index.llms import OpenAI
 from omegaconf import DictConfig
 import hydra
+from dotenv import load_dotenv
 
 from llama_index.indices.query.query_transform import HyDEQueryTransform
 from autorag.synthesizer.utils import init_query_engine, replace_with_identifiers
@@ -191,4 +192,5 @@ def main(cfg: DictConfig):
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

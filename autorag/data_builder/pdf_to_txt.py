@@ -1,4 +1,3 @@
-#import pdftotext
 import os
 from pathlib import Path
 from tqdm import tqdm
@@ -14,23 +13,6 @@ def parse_single_pdf(pdf_path):
     reader = PdfReader(pdf_path)
     number_of_pages = len(reader.pages)
     return " ".join([page.extract_text() for page in reader.pages])
-
-def single_pdf_to_text(pdf_path, txt_path):
-    """
-    Convert a single pdf to txt.
-    """
-
-    # Load your PDF
-    with open(pdf_path, "rb") as f:
-        pdf = pdftotext.PDF(f)
-
-        text = ""
-        for page in pdf:
-            text = text + page + " "
-
-    with open(txt_path, "w", encoding='utf-8') as txt_file:
-        txt_file.write(text)
-
 
 def pdf_to_txt(pdf_dir, txt_dir):
     """

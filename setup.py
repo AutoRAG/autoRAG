@@ -13,6 +13,6 @@ setup(
         "pandas==2.1.0",
         "llama_index==0.9.28.post2",
         "streamlit==1.29.0",
-        "pdftotext==2.2.2",
+        "python-dotenv==1.0.1",
     ],
 )

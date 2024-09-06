@@ -29,11 +29,15 @@ def init_query_engine(
 ):
 
     synthesizer_service_context = ServiceContext.from_defaults(llm=_llm)
+    citation_qa_template = CITATION_QA_TEMPLATE
 
     if semantic_scholar:
         retriever = SemanticScholarRetriever(topk=_citation_cfg.similarity_top_k)
         node_postprocessors = None
         query_engine_callback_manager = synthesizer_service_context.callback_manager
+        if _citation_cfg.citation_semantic_scholar_template_path:
+            with open(_citation_cfg.citation_semantic_scholar_template_path, "r", encoding="utf-8") as f:
+                citation_qa_template = PromptTemplate(f.read())
     else:
         expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
         index = expanded_index.index
@@ -46,12 +50,9 @@ def init_query_engine(
             [expanded_index.node_expander] if enable_node_expander else None
         )
         query_engine_callback_manager = index.service_context.callback_manager
-
-    if _citation_cfg.citation_qa_template_path:
-        with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
-            citation_qa_template = PromptTemplate(f.read())
-    else:
-        citation_qa_template = CITATION_QA_TEMPLATE
+        if _citation_cfg.citation_qa_template_path:
+            with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
+                citation_qa_template = PromptTemplate(f.read())
 
     response_synthesizer = get_response_synthesizer(
         service_context=synthesizer_service_context,

@@ -123,4 +123,5 @@ class SemanticScholarRetriever(BaseRetriever):
                 node=node, score=(total_items - rank) / total_items
             )
             nodes_with_score.append(node_with_score)
+        print(f'number of papers found: {len(nodes_with_score)}')
         return nodes_with_score
