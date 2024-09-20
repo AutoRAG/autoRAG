@@ -1,4 +1,5 @@
 from autorag.indexer.expanded_indexer import ExpandedIndexer
+from dotenv import load_dotenv
 import hydra
 from omegaconf import DictConfig
 
@@ -17,4 +18,5 @@ def main(cfg: DictConfig):
 
 
 if __name__ == "__main__":
+    load_dotenv()
     main()
