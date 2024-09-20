@@ -36,7 +36,11 @@ def init_query_engine(
         node_postprocessors = None
         query_engine_callback_manager = synthesizer_service_context.callback_manager
         if _citation_cfg.citation_semantic_scholar_template_path:
-            with open(_citation_cfg.citation_semantic_scholar_template_path, "r", encoding="utf-8") as f:
+            with open(
+                _citation_cfg.citation_semantic_scholar_template_path,
+                "r",
+                encoding="utf-8",
+            ) as f:
                 citation_qa_template = PromptTemplate(f.read())
     else:
         expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
@@ -45,13 +49,15 @@ def init_query_engine(
         if _citation_cfg.google_search_topk > 0:
             google_retriever = GoogleRetriever(topk=_citation_cfg.google_search_topk)
             retriever = GoogleAndVectorRetriever(retriever, google_retriever)
-    
+
         node_postprocessors = (
             [expanded_index.node_expander] if enable_node_expander else None
         )
         query_engine_callback_manager = index.service_context.callback_manager
         if _citation_cfg.citation_qa_template_path:
-            with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
+            with open(
+                _citation_cfg.citation_qa_template_path, "r", encoding="utf-8"
+            ) as f:
                 citation_qa_template = PromptTemplate(f.read())
 
     response_synthesizer = get_response_synthesizer(
