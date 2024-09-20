@@ -14,6 +14,7 @@ EMBED_MODEL_CONFIG_PATH = "embed_model_config.json"
 STORAGE_BASENAME = "storage_context"
 EXPANDED_NODE_BASENAME = "expanded_nodes"
 
+
 class TxtFileReader(BaseReader):
     def load_data(self, file, extra_info=None):
         with open(file, "r") as f:
@@ -48,8 +49,9 @@ class ExpandedIndexer:
             else:
                 file_metadata = None
             documents = SimpleDirectoryReader(
-                data_dir, file_metadata=file_metadata
-                #data_dir, file_metadata=file_metadata, file_extractor={".txt": TxtFileReader()}
+                data_dir,
+                file_metadata=file_metadata,
+                # data_dir, file_metadata=file_metadata, file_extractor={".txt": TxtFileReader()}
             ).load_data()
             service_context = ServiceContext.from_defaults(
                 chunk_size=sentence_splitter_cfg.chunk_size,

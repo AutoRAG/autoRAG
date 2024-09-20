@@ -57,7 +57,6 @@ def main(cfg: DictConfig):
     reference_url = cur_cfg.reference_url
     include_historical_messages = cur_cfg.include_historical_messages
     streaming = True
-        
 
     llm = OpenAI(model=openai_model_name, temperature=0)
     query_engine_med_qa = init_query_engine(
@@ -67,7 +66,7 @@ def main(cfg: DictConfig):
         enable_node_expander,
         streaming,
     )
-    
+
     query_engine_semantic_scholar = init_query_engine(
         index_dir,
         llm,
@@ -77,16 +76,15 @@ def main(cfg: DictConfig):
         semantic_scholar=True,
     )
     st.header(f"{app_description.upper()} Chatbot Demo")
-    
+
     semantic_scholar = st.toggle("Use Semantic Scholar")
     if semantic_scholar:
         query_engine = query_engine_semantic_scholar
     else:
         query_engine = query_engine_med_qa
-    
+
     if enable_hyde and not semantic_scholar:
         hyde = HyDEQueryTransform(include_original=True)
-
 
     if "messages" not in st.session_state.keys():  # Initialize the chat message history
         st.session_state.messages = [

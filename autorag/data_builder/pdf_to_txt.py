@@ -14,6 +14,7 @@ def parse_single_pdf(pdf_path):
     number_of_pages = len(reader.pages)
     return " ".join([page.extract_text() for page in reader.pages])
 
+
 def pdf_to_txt(pdf_dir, txt_dir):
     """
     For each pdf in the pdf_dir, convert to text and save in txt_dir.
