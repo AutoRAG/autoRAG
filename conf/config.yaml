@@ -44,7 +44,7 @@ retriever:
       - "mrr"
       - "hit_rate"
 synthesizer:
-  render:
+  app:
     index_dir: ${indexer.build.index_dir}
     app_description: ${app_name}
     enable_hyde: true
@@ -55,10 +55,10 @@ synthesizer:
     include_historical_messages: true
     citation_cfg:
       citation_chunk_size: 512
-      citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
-      citation_semantic_scholar_template_path: data/${app_name}/cite/citation_semantic_scholar_template.txt
+      citation_qa_template_path: data/${app_name}/cite/citation_qa_template.txt
       similarity_top_k: 3
-      google_search_topk: 3      
+      google_search_topk: 3     
+    port: 3000 
   batch_generate:
     index_dir: ${indexer.build.index_dir}
     enable_hyde: true
@@ -67,7 +67,6 @@ synthesizer:
     citation_cfg:
       citation_chunk_size: 512
       citation_qa_template_path: data/${app_name}/cite/citation_qa_templat.txt
-      citation_semantic_scholar_template_path: data/${app_name}/cite/citation_semantic_scholar_template.txt
       similarity_top_k: 3
       google_search_topk: 3
     excel_input_path: ${data_builder.generate_synthetic_query.excel_output_path}

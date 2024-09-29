@@ -1,4 +1,4 @@
-import streamlit as st
+#import streamlit as st
 from llama_index.query_engine.citation_query_engine import (
     CITATION_QA_TEMPLATE,
     CITATION_REFINE_TEMPLATE,
@@ -18,7 +18,7 @@ from llama_index.schema import MetadataMode
 from llama_index.query_engine import CitationQueryEngine
 
 
-@st.cache_resource
+#@st.cache_resource
 def init_query_engine(
     index_dir,
     _llm,
@@ -35,13 +35,7 @@ def init_query_engine(
         retriever = SemanticScholarRetriever(topk=_citation_cfg.similarity_top_k)
         node_postprocessors = None
         query_engine_callback_manager = synthesizer_service_context.callback_manager
-        if _citation_cfg.citation_semantic_scholar_template_path:
-            with open(
-                _citation_cfg.citation_semantic_scholar_template_path,
-                "r",
-                encoding="utf-8",
-            ) as f:
-                citation_qa_template = PromptTemplate(f.read())
+
     else:
         expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
         index = expanded_index.index
@@ -54,11 +48,12 @@ def init_query_engine(
             [expanded_index.node_expander] if enable_node_expander else None
         )
         query_engine_callback_manager = index.service_context.callback_manager
-        if _citation_cfg.citation_qa_template_path:
-            with open(
-                _citation_cfg.citation_qa_template_path, "r", encoding="utf-8"
-            ) as f:
-                citation_qa_template = PromptTemplate(f.read())
+    
+    if _citation_cfg.citation_qa_template_path:
+        with open(
+            _citation_cfg.citation_qa_template_path, "r", encoding="utf-8"
+        ) as f:
+            citation_qa_template = PromptTemplate(f.read())
 
     response_synthesizer = get_response_synthesizer(
         service_context=synthesizer_service_context,
