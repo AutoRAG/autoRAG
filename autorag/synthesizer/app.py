@@ -23,6 +23,7 @@ llm = None
 hyde = None
 port = None  # Add port as a global variable
 
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def init_app(cfg: DictConfig):
     global query_engine, llm, hyde, port
@@ -42,7 +43,12 @@ def init_app(cfg: DictConfig):
     app_name = cfg.app_name
     if app_name == "scholar":
         query_engine = init_query_engine(
-            index_dir, llm, citation_cfg, enable_node_expander, streaming, semantic_scholar=True
+            index_dir,
+            llm,
+            citation_cfg,
+            enable_node_expander,
+            streaming,
+            semantic_scholar=True,
         )
     else:
         query_engine = init_query_engine(
@@ -50,27 +56,33 @@ def init_app(cfg: DictConfig):
         )
         if enable_hyde:
             hyde = HyDEQueryTransform(include_original=True)
-    
+
     print(f"Initialized {app_name} API")
     print(f"Port in init_app: {port}")
+
 
 def main():
     global port  # Declare port as global in main
     init_app()  # Call init_app to initialize everything
-    print(f"Port in main: {port}")    
-    app.run(host='0.0.0.0', port=port, debug=True)
+    print(f"Port in main: {port}")
+    app.run(host="0.0.0.0", port=port, debug=True)
 
-@app.route('/query', methods=['POST'])
+
+@app.route("/query", methods=["POST"])
 def query():
     data = request.json
-    prompt = data['prompt']
-    include_historical_messages = data.get('include_historical_messages', False)
-    chat_history = data.get('chat_history', [])
+    prompt = data["prompt"]
+    include_historical_messages = data.get("include_historical_messages", False)
+    chat_history = data.get("chat_history", [])
 
     if include_historical_messages and len(chat_history) > 0:
         condense_prompt_template = DEFAULT_CONDENSE_PROMPT
-        chat_history_str = "\n".join([f"{m['role']}: {m['content']}" for m in chat_history])
-        prompt = llm.predict(condense_prompt_template, question=prompt, chat_history=chat_history_str)
+        chat_history_str = "\n".join(
+            [f"{m['role']}: {m['content']}" for m in chat_history]
+        )
+        prompt = llm.predict(
+            condense_prompt_template, question=prompt, chat_history=chat_history_str
+        )
 
     if hyde:
         prompt = hyde(prompt)
@@ -82,18 +94,22 @@ def query():
     references = []
     for raw_ref_id, new_ref_id in mapping.items():
         ref_node = response.source_nodes[raw_ref_id - 1]
-        references.append({
-            'id': new_ref_id,
-            'url': ref_node.metadata.get('url', ''),
-            'content': ref_node.node.get_content(metadata_mode=MetadataMode.LLM)
-        })
+        references.append(
+            {
+                "id": new_ref_id,
+                "url": ref_node.metadata.get("url", ""),
+                "content": ref_node.node.get_content(metadata_mode=MetadataMode.LLM),
+            }
+        )
 
-    return jsonify({
-        'response': rag_response,
-        'references': references,
-        'source_nodes': [node.node.get_text() for node in response.source_nodes]
-    })
+    return jsonify(
+        {
+            "response": rag_response,
+            "references": references,
+            "source_nodes": [node.node.get_text() for node in response.source_nodes],
+        }
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
-
