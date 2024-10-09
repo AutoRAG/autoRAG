@@ -51,6 +51,7 @@ KEYWORD_IMPROVEMENT_PROMPT = PromptTemplate(
     List of keywords:"""
 )
 
+
 class SemanticScholarRetriever(BaseRetriever):
     """Custom retriever that performs semantic search for papers"""
 
@@ -135,7 +136,13 @@ class SemanticScholarRetriever(BaseRetriever):
     def query_to_keywords(self, query):
         return self.llm.predict(QUERY2KEYWORD_PROMPT_TEMPLATE, question=query)
 
-    def _retrieve_with_iterative_improvement(self, query_bundle: QueryBundle, max_iterations: int = 3, min_highly_relevant: int = 10, relevance_score_threshold: int = 4) -> List[NodeWithScore]:
+    def _retrieve_with_iterative_improvement(
+        self,
+        query_bundle: QueryBundle,
+        max_iterations: int = 3,
+        min_highly_relevant: int = 10,
+        relevance_score_threshold: int = 4,
+    ) -> List[NodeWithScore]:
         """Retrieve nodes with iterative keyword improvement."""
         question = query_bundle.query_str
         keywords = self.query_to_keywords(question)
@@ -150,7 +157,7 @@ class SemanticScholarRetriever(BaseRetriever):
             print(f"Iteration {iteration}, keywords: {cur_keywords}")
             res = self.search(cur_keywords, self.topk)
             items = res.get("data", [])
-            
+
             for item in items:
                 title = item["title"]
                 abstract = item["abstract"]
@@ -160,64 +167,78 @@ class SemanticScholarRetriever(BaseRetriever):
                     RELEVANCE_CHECK_PROMPT,
                     question=question,
                     title=title,
-                    abstract=abstract
+                    abstract=abstract,
                 )
-                
+
                 try:
                     relevance_score = float(relevance_score.strip())
                 except ValueError:
-                    print(f"Invalid relevance score: {relevance_score}. Skipping this item.")
+                    print(
+                        f"Invalid relevance score: {relevance_score}. Skipping this item."
+                    )
                     continue
-                
-                if relevance_score >= relevance_score_threshold: 
-                    if item['abstract'] is None:
+
+                if relevance_score >= relevance_score_threshold:
+                    if item["abstract"] is None:
                         print(f"Skipping {title} because it has no abstract")
-                        continue                    
+                        continue
                     node = self._create_node_from_item(item, relevance_score)
                     highly_relevant_nodes.append(node)
-                    set_of_paper_ids.add(item['paperId'])
-            
-            print(f"So far found {len(highly_relevant_nodes)} highly relevant papers (score >= {relevance_score_threshold})")
-            
+                    set_of_paper_ids.add(item["paperId"])
+
+            print(
+                f"So far found {len(highly_relevant_nodes)} highly relevant papers (score >= {relevance_score_threshold})"
+            )
+
             if len(highly_relevant_nodes) >= min_highly_relevant:
-                print(f"Reached the target of {min_highly_relevant} highly relevant papers. Stopping iteration.")
-                print(f"number of highly relevant nodes found: {len(highly_relevant_nodes)}")
+                print(
+                    f"Reached the target of {min_highly_relevant} highly relevant papers. Stopping iteration."
+                )
+                print(
+                    f"number of highly relevant nodes found: {len(highly_relevant_nodes)}"
+                )
                 break
-            
-            if iteration == 0:                
+
+            if iteration == 0:
                 list_of_keywords_str = self.llm.predict(
                     KEYWORD_IMPROVEMENT_PROMPT,
                     keywords=cur_keywords,
                     question=question,
-                    num_keywords=max_iterations - 1
+                    num_keywords=max_iterations - 1,
                 )
                 try:
-                    list_of_keywords += [kws.strip('- \n') for kws in list_of_keywords_str.split("\n") if kws.strip('- \n') != '']
+                    list_of_keywords += [
+                        kws.strip("- \n")
+                        for kws in list_of_keywords_str.split("\n")
+                        if kws.strip("- \n") != ""
+                    ]
                     print(list_of_keywords)
                 except Exception as e:
-                    print(f'failed to parse {list_of_keywords_str}. error: {str(e)}')
+                    print(f"failed to parse {list_of_keywords_str}. error: {str(e)}")
                     break
-        
+
         # Sort the relevant_nodes by score in descending order
         highly_relevant_nodes.sort(key=lambda x: x.score, reverse=True)
         return highly_relevant_nodes
 
-    def _create_node_from_item(self, item, relevance_score=None):        
+    def _create_node_from_item(self, item, relevance_score=None):
         title = item["title"]
         paper_id = item["paperId"]
         paper_url = item["url"]
         text = item["abstract"]
-        
+
         metadata = {
             "page_number": None,
             "document_name": title,
-            "document_type": "paper",            
+            "document_type": "paper",
             "url": paper_url,
         }
-        
+
         node = TextNode(text=text, metadata=metadata)
 
-        return NodeWithScore(node=node, score=relevance_score)  # We could adjust the score based on relevance if needed
+        return NodeWithScore(
+            node=node, score=relevance_score
+        )  # We could adjust the score based on relevance if needed
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query using the iterative improvement method."""

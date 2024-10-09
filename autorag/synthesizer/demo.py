@@ -72,12 +72,10 @@ if st.session_state.messages[-1]["role"] != "assistant":
             if references:
                 full_response += "\n\n### References\n\n"
                 for ref in references:
-                    metadata_str = json.dumps(ref['meta_data'], indent=2)
+                    metadata_str = json.dumps(ref["meta_data"], indent=2)
                     if ref["url"]:
-                        full_response += (
-                            f"#### [{ref['id']}]\n\n{metadata_str}\n\n"
-                        )
-                    else:                        
+                        full_response += f"#### [{ref['id']}]\n\n{metadata_str}\n\n"
+                    else:
                         full_response += f"#### [{ref['id']}]\n\n{metadata_str}\n\n{ref['content']}\n\n"
 
             message_placeholder.markdown(full_response)
