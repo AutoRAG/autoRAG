@@ -75,7 +75,7 @@ def query():
     include_historical_messages = data.get("include_historical_messages", False)
     chat_history = data.get("chat_history", [])
 
-    if include_historical_messages and len(chat_history) > 0:
+    if include_historical_messages and len(chat_history) > 1:
         condense_prompt_template = DEFAULT_CONDENSE_PROMPT
         chat_history_str = "\n".join(
             [f"{m['role']}: {m['content']}" for m in chat_history]
@@ -98,7 +98,8 @@ def query():
             {
                 "id": new_ref_id,
                 "url": ref_node.metadata.get("url", ""),
-                "content": ref_node.node.get_content(metadata_mode=MetadataMode.LLM),
+                "content": ref_node.node.get_content(metadata_mode=MetadataMode.NONE),
+                "meta_data": ref_node.node.metadata,
             }
         )
 
