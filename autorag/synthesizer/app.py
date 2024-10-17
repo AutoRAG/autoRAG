@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import hydra
 from omegaconf import DictConfig
 from flask_cors import CORS
+import urllib
 
 app = Flask(__name__)
 CORS(app)
@@ -22,11 +23,12 @@ query_engine = None
 llm = None
 hyde = None
 port = None  # Add port as a global variable
-
+document_bucket_name = None
+app_name = None
 
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def init_app(cfg: DictConfig):
-    global query_engine, llm, hyde, port
+    global query_engine, llm, hyde, port, document_bucket_name, app_name
 
     cur_cfg = cfg.synthesizer.app
     index_dir = cur_cfg.index_dir
@@ -34,6 +36,8 @@ def init_app(cfg: DictConfig):
     enable_hyde = cur_cfg.enable_hyde
     enable_node_expander = cur_cfg.enable_node_expander
     openai_model_name = cur_cfg.openai_model_name
+    document_bucket_name = cur_cfg.document_bucket_name
+    print(f"document_bucket_name: {document_bucket_name}")
     streaming = True
     port = cur_cfg.port  # Set the global port variable
 
@@ -90,16 +94,26 @@ def query():
     response = query_engine.query(prompt)
     raw_rag_response = "".join(response.response_gen)
     rag_response, mapping = replace_with_identifiers(raw_rag_response)
-
+    print(f"document_bucket_name: {document_bucket_name}")
     references = []
     for raw_ref_id, new_ref_id in mapping.items():
         ref_node = response.source_nodes[raw_ref_id - 1]
+        metadata = ref_node.node.metadata
+        if "document_name" in metadata and metadata["document_name"] is not None and metadata.get("url", None) is None:
+            if metadata["document_name"].endswith(".json"):
+                document_name = metadata["document_name"].replace(".json", ".pdf")
+            elif metadata["document_name"].endswith(".pdf"):
+                document_name = metadata["document_name"]
+            else:
+                document_name = metadata["document_name"] + ".pdf"
+            url_encoded_document_name = urllib.parse.quote_plus(document_name)
+            metadata["url"] = f'https://{document_bucket_name}.s3.amazonaws.com/{app_name}/{url_encoded_document_name}'
+        print(f"metadata: {metadata}")
         references.append(
             {
                 "id": new_ref_id,
-                "url": ref_node.metadata.get("url", ""),
                 "content": ref_node.node.get_content(metadata_mode=MetadataMode.NONE),
-                "meta_data": ref_node.node.metadata,
+                "metadata": ref_node.node.metadata,
             }
         )
 

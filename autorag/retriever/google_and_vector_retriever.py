@@ -63,7 +63,7 @@ class GoogleRetriever(BaseRetriever):
                 "page_number": None,
                 "document_name": title,
                 "document_type": "webpage",
-                "link": link,
+                "url": link,
             }
 
             node = TextNode(text=text, metadata=metadata)
