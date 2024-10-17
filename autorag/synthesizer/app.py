@@ -26,6 +26,7 @@ port = None  # Add port as a global variable
 document_bucket_name = None
 app_name = None
 
+
 @hydra.main(version_base=None, config_path="../../conf", config_name="config")
 def init_app(cfg: DictConfig):
     global query_engine, llm, hyde, port, document_bucket_name, app_name
@@ -99,7 +100,11 @@ def query():
     for raw_ref_id, new_ref_id in mapping.items():
         ref_node = response.source_nodes[raw_ref_id - 1]
         metadata = ref_node.node.metadata
-        if "document_name" in metadata and metadata["document_name"] is not None and metadata.get("url", None) is None:
+        if (
+            "document_name" in metadata
+            and metadata["document_name"] is not None
+            and metadata.get("url", None) is None
+        ):
             if metadata["document_name"].endswith(".json"):
                 document_name = metadata["document_name"].replace(".json", ".pdf")
             elif metadata["document_name"].endswith(".pdf"):
@@ -107,7 +112,9 @@ def query():
             else:
                 document_name = metadata["document_name"] + ".pdf"
             url_encoded_document_name = urllib.parse.quote_plus(document_name)
-            metadata["url"] = f'https://{document_bucket_name}.s3.amazonaws.com/{app_name}/{url_encoded_document_name}'
+            metadata["url"] = (
+                f"https://{document_bucket_name}.s3.amazonaws.com/{app_name}/{url_encoded_document_name}"
+            )
         print(f"metadata: {metadata}")
         references.append(
             {
