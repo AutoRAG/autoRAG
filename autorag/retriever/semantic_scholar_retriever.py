@@ -234,7 +234,7 @@ class SemanticScholarRetriever(BaseRetriever):
             "url": paper_url,
         }
 
-        node = TextNode(text=text, metadata=metadata)
+        node = TextNode(text=text, metadata=metadata, text_template="{content}")
 
         return NodeWithScore(
             node=node, score=relevance_score

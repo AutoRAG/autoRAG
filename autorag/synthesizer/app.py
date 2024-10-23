@@ -124,11 +124,20 @@ def query():
             }
         )
 
+    source_nodes = [
+        {
+            "content": node.node.get_content(metadata_mode=MetadataMode.NONE),
+            "metadata": node.node.metadata,
+        }
+        for node in response.source_nodes
+    ]
+    if len(references) == 0 and app_name == "scholar":
+        rag_response = "Here are some potentially relevant references."
     return jsonify(
         {
             "response": rag_response,
             "references": references,
-            "source_nodes": [node.node.get_text() for node in response.source_nodes],
+            "source_nodes": source_nodes,
         }
     )
 
