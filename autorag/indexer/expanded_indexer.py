@@ -33,14 +33,17 @@ class ExpandedIndexer:
     @classmethod
     def build(cls, data_dir, pre_processor_cfg, post_processor_cfg):
         # Processing documents based on the specified pre_processor type.
-        sentence_splitter_cfg = pre_processor_cfg.sentence_splitter_cfg
         if pre_processor_cfg.pre_processor_type == "azure":
             file_type = pre_processor_cfg.azure_pre_processor_cfg.file_type
+            paragraph_process_cfg = (
+                pre_processor_cfg.azure_pre_processor_cfg.paragraph_process_cfg
+            )
             table_process_cfg = (
                 pre_processor_cfg.azure_pre_processor_cfg.table_process_cfg
             )
+
             nodes = AzureOutputProcessor(
-                data_dir, file_type, sentence_splitter_cfg, table_process_cfg
+                data_dir, file_type, paragraph_process_cfg, table_process_cfg
             ).nodes
             index = VectorStoreIndex(nodes)
         else:
@@ -48,11 +51,15 @@ class ExpandedIndexer:
                 file_metadata = file_metadata_dict[pre_processor_cfg.file_metadata]
             else:
                 file_metadata = None
+
             documents = SimpleDirectoryReader(
                 data_dir,
                 file_metadata=file_metadata,
                 # data_dir, file_metadata=file_metadata, file_extractor={".txt": TxtFileReader()}
             ).load_data()
+
+            # Use sentence splitter configuration if provided
+            sentence_splitter_cfg = pre_processor_cfg.sentence_splitter_cfg
             service_context = ServiceContext.from_defaults(
                 chunk_size=sentence_splitter_cfg.chunk_size,
                 chunk_overlap=sentence_splitter_cfg.chunk_overlap,

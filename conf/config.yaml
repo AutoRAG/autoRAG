@@ -7,9 +7,15 @@ indexer:
       pre_processor_type: azure
       azure_pre_processor_cfg:
         file_type: Guidance
+        paragraph_process_cfg:
+          polygon_group: true
+          chunk_size: 512
+          sentence_splitter_cfg:
+            chunk_size: 512
+            chunk_overlap: 20          
         table_process_cfg:
           include_table: true
-          by_token: ture
+          by_token: true
           token_limit: 3000
       sentence_splitter_cfg:
         chunk_size: 512
