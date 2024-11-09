@@ -131,12 +131,14 @@ class AzurePolygonParagraphProcessor:
         azure_paragraphs_list: list[dict] = None,
         file_name: str = None,
         file_type: str = None,
-        chunk_size: int = 512,
-    ) -> None:
+        sentence_splitter_cfg: dict = {},
+    ) -> None:    
         self.azure_paragraphs_list = azure_paragraphs_list
         self.file_name = file_name
         self.file_type = file_type
-        self.chunk_size = chunk_size
+        self.chunk_size = sentence_splitter_cfg.get("chunk_size", 512)
+        self.chunk_overlap = sentence_splitter_cfg.get("chunk_overlap", 32)
+        self.chunk_overlap = min(self.chunk_overlap, self.chunk_size)
 
         # Process paragraphs into nodes
         filtered_paragraphs = self._filter_content()
@@ -160,79 +162,71 @@ class AzurePolygonParagraphProcessor:
 
         return filtered_content
 
-    def _create_nodes(self, filtered_paragraphs: list[dict]) -> list[TextNode]:
-        """
-        Creates nodes by combining paragraphs and tracking polygon boundaries.
-        Ensures each node's content doesn't exceed the chunk_size (in words).
-
-        :param filtered_paragraphs: List of filtered paragraph dictionaries.
-        :return: List of TextNode objects.
-        """
+    def _create_nodes(self, filtered_pages: list[dict]) -> list[TextNode]:
         nodes = []
-        current_text = []
-        current_word_count = 0
-        current_page = None
-        first_polygon = None
-        last_polygon = None
+        all_words = []
+        
+        # First, collect all words with their metadata
+        for page in filtered_pages:
+            words = page.get("words", [])
+            for word in words:
+                all_words.append({
+                    'content': word.get("content", "").strip(),
+                    'page_number': page.get("pageNumber", 0),
+                    'polygon': word.get("polygon", [])
+                })
 
-        for paragraph in filtered_paragraphs:
-            content = paragraph.get("content", "").strip()
-            page = paragraph["boundingRegions"][0]["pageNumber"]
-            polygon = paragraph["boundingRegions"][0]["polygon"]
+        # Process words with overlap
+        i = 0
+        while i < len(all_words):
+            current_words = []
+            first_page = all_words[i]['page_number']
+            first_polygon = all_words[i]['polygon']
+            
+            # Add words until we reach chunk_size
+            end_idx = min(i + self.chunk_size, len(all_words))
+            current_words = [all_words[j]['content'] for j in range(i, end_idx)]
+            current_page = all_words[end_idx - 1]['page_number']
+            last_polygon = all_words[end_idx - 1]['polygon']
 
-            # Count words in current paragraph
-            word_count = len(content.split())
+            # Create node
+            if current_words:
+                node = self._create_single_node(
+                    " ".join(current_words),
+                    first_page,
+                    current_page,
+                    first_polygon,
+                    last_polygon
+                )
+                nodes.append(node)
 
-            # Start new node if:
-            # 1. Page number changes
-            # 2. Adding this paragraph would exceed chunk_size
-            if (current_page is not None and page != current_page) or (
-                current_word_count + word_count >= self.chunk_size
-            ):
-                if current_text:
-                    node = self._create_single_node(
-                        " ".join(current_text),
-                        current_page,
-                        first_polygon,
-                        last_polygon,
-                    )
-                    nodes.append(node)
-                    current_text = []
-                    current_word_count = 0
-                    first_polygon = None
-
-            # Track first and last polygons
-            if not first_polygon:
-                first_polygon = polygon
-            last_polygon = polygon
-
-            current_text.append(content)
-            current_word_count += word_count
-            current_page = page
-
-        # Create final node if there's remaining text
-        if current_text:
-            node = self._create_single_node(
-                " ".join(current_text), current_page, first_polygon, last_polygon
-            )
-            nodes.append(node)
+            # Move forward by (chunk_size - overlap) or at least 1 to avoid infinite loop
+            step_size = max(self.chunk_size - self.chunk_overlap, 1)
+            i += step_size
 
         return nodes
 
     def _create_single_node(
-        self, text: str, page: int, first_polygon: list, last_polygon: list
+        self,
+        text: str,
+        first_page: int,
+        last_page: int,
+        first_polygon: list,
+        last_polygon: list
     ) -> TextNode:
         """
         Creates a single TextNode with metadata.
 
         :param text: Combined text content.
-        :param page: Page number.
+        :param first_page: First page number of the content.
+        :param last_page: Last page number of the content.
         :param first_polygon: Polygon coordinates of first paragraph.
         :param last_polygon: Polygon coordinates of last paragraph.
         :return: TextNode object.
         """
         metadata = {
-            "page_number": page,
+            "first_page_number": first_page,
+            "last_page_number": last_page,
             "document_name": self.file_name,
             "document_type": self.file_type,
             "first_polygon": first_polygon,

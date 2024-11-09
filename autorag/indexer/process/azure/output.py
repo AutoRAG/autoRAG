@@ -19,7 +19,7 @@ class AzureOutputProcessor:
     :param file_type: The type of the processed files.
     :param paragraph_process_cfg: Configuration for paragraph processing.
                                 If polygon_group=True, uses polygon tracking with chunk_size.
-                                Otherwise uses sentence splitter with sentence_splitter_args.
+                                Otherwise uses sentence splitter with sentence_splitter_cfg.
     :param table_process_cfg: The configuration for processing tables.
     """
 
@@ -29,6 +29,7 @@ class AzureOutputProcessor:
         file_type: str = None,
         paragraph_process_cfg: dict = {},
         table_process_cfg: dict = {},
+        sentence_splitter_cfg: dict = {},
     ) -> None:
         # Load all files from the specified directory
         self.all_files = JsonFileLoader(data_dir).load()
@@ -36,11 +37,7 @@ class AzureOutputProcessor:
 
         # Paragraph processing configuration
         self.polygon_group = paragraph_process_cfg.get("polygon_group", False)
-        self.chunk_size = paragraph_process_cfg.get("chunk_size", 512)
-        self.sentence_splitter_args = paragraph_process_cfg.get(
-            "sentence_splitter_args", {}
-        )
-
+        self.sentence_splitter_cfg = sentence_splitter_cfg
         # Table processing configuration
         self.include_table = table_process_cfg.get("include_table", False)
         self.by_token = table_process_cfg.get("by_token", False)
@@ -53,26 +50,27 @@ class AzureOutputProcessor:
 
         # Process the loaded files
         for file_name, file_content in self.all_files.items():
-            paragraphs_list = file_content.get("paragraphs", [])
+            
             tables_list = file_content.get("tables", [])
 
             # Process paragraph data
-            if paragraphs_list:
-                if self.polygon_group:
-                    paragraphs_nodes = AzurePolygonParagraphProcessor(
-                        paragraphs_list,
-                        file_name,
-                        self.file_type,
-                        self.chunk_size,
-                    ).nodes
-                else:
-                    paragraphs_nodes = AzureParagraphProcessor(
-                        paragraphs_list,
-                        file_name,
-                        self.file_type,
-                        self.sentence_splitter_args,
-                    ).nodes
-                nodes += paragraphs_nodes
+            if self.polygon_group:
+                pages_list = file_content.get("pages", [])
+                paragraphs_nodes = AzurePolygonParagraphProcessor(
+                    pages_list,
+                    file_name,
+                    self.file_type,
+                    self.sentence_splitter_cfg,
+                ).nodes
+            else:
+                paragraphs_list = file_content.get("paragraphs", [])
+                paragraphs_nodes = AzureParagraphProcessor(
+                    paragraphs_list,
+                    file_name,
+                    self.file_type,
+                    self.sentence_splitter_cfg,
+                ).nodes
+            nodes += paragraphs_nodes
 
             # Process table data
             if self.include_table and tables_list:
