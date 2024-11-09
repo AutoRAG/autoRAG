@@ -44,7 +44,11 @@ class ExpandedIndexer:
             )
 
             nodes = AzureOutputProcessor(
-                data_dir, file_type, paragraph_process_cfg, table_process_cfg, sentence_splitter_cfg
+                data_dir,
+                file_type,
+                paragraph_process_cfg,
+                table_process_cfg,
+                sentence_splitter_cfg,
             ).nodes
             index = VectorStoreIndex(nodes)
         else:

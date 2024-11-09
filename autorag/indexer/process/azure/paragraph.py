@@ -132,7 +132,7 @@ class AzurePolygonParagraphProcessor:
         file_name: str = None,
         file_type: str = None,
         sentence_splitter_cfg: dict = {},
-    ) -> None:    
+    ) -> None:
         self.azure_paragraphs_list = azure_paragraphs_list
         self.file_name = file_name
         self.file_type = file_type
@@ -165,29 +165,31 @@ class AzurePolygonParagraphProcessor:
     def _create_nodes(self, filtered_pages: list[dict]) -> list[TextNode]:
         nodes = []
         all_words = []
-        
+
         # First, collect all words with their metadata
         for page in filtered_pages:
             words = page.get("words", [])
             for word in words:
-                all_words.append({
-                    'content': word.get("content", "").strip(),
-                    'page_number': page.get("pageNumber", 0),
-                    'polygon': word.get("polygon", [])
-                })
+                all_words.append(
+                    {
+                        "content": word.get("content", "").strip(),
+                        "page_number": page.get("pageNumber", 0),
+                        "polygon": word.get("polygon", []),
+                    }
+                )
 
         # Process words with overlap
         i = 0
         while i < len(all_words):
             current_words = []
-            first_page = all_words[i]['page_number']
-            first_polygon = all_words[i]['polygon']
-            
+            first_page = all_words[i]["page_number"]
+            first_polygon = all_words[i]["polygon"]
+
             # Add words until we reach chunk_size
             end_idx = min(i + self.chunk_size, len(all_words))
-            current_words = [all_words[j]['content'] for j in range(i, end_idx)]
-            current_page = all_words[end_idx - 1]['page_number']
-            last_polygon = all_words[end_idx - 1]['polygon']
+            current_words = [all_words[j]["content"] for j in range(i, end_idx)]
+            current_page = all_words[end_idx - 1]["page_number"]
+            last_polygon = all_words[end_idx - 1]["polygon"]
 
             # Create node
             if current_words:
@@ -196,7 +198,7 @@ class AzurePolygonParagraphProcessor:
                     first_page,
                     current_page,
                     first_polygon,
-                    last_polygon
+                    last_polygon,
                 )
                 nodes.append(node)
 
@@ -212,7 +214,7 @@ class AzurePolygonParagraphProcessor:
         first_page: int,
         last_page: int,
         first_polygon: list,
-        last_polygon: list
+        last_polygon: list,
     ) -> TextNode:
         """
         Creates a single TextNode with metadata.

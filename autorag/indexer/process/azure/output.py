@@ -50,7 +50,7 @@ class AzureOutputProcessor:
 
         # Process the loaded files
         for file_name, file_content in self.all_files.items():
-            
+
             tables_list = file_content.get("tables", [])
 
             # Process paragraph data
