@@ -75,15 +75,18 @@ def init_query_engine(
     return query_engine
 
 
-def replace_with_identifiers(s):
+def replace_with_identifiers(s, existing_mapping=None):
     # Initialize a counter
-    mapping = {}
+    mapping = existing_mapping if existing_mapping is not None else {}
+    next_identifier = max(mapping.values(), default=0) + 1
 
     # Define a function to use as replacement in re.sub
     def replacement(match):
+        nonlocal next_identifier
         matched_str = int(match.group().lstrip("[").rstrip("]"))
         if matched_str not in mapping:
-            mapping[matched_str] = len(mapping) + 1
+            mapping[matched_str] = next_identifier
+            next_identifier += 1
 
         return f"[{mapping[matched_str]}]"
 
@@ -91,4 +94,11 @@ def replace_with_identifiers(s):
     pattern = r"\[\d+\]"
     # Replace all matches of the pattern with the new identifiers
     new_s = re.sub(pattern, replacement, s)
-    return new_s, mapping
+
+    # Filter the mapping to include only identifiers mentioned in the current string
+    current_identifiers = set(
+        int(m.group().lstrip("[").rstrip("]")) for m in re.finditer(pattern, s)
+    )
+    filtered_mapping = {k: v for k, v in mapping.items() if k in current_identifiers}
+
+    return new_s, filtered_mapping

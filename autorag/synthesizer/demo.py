@@ -41,8 +41,6 @@ if st.session_state.messages[-1]["role"] != "assistant":
         message_placeholder = st.empty()
 
         # Prepare the request data
-
-        # Choose the appropriate API URL based on the selection
         if data_source == "DEVICE":
             api_url = DEVICE_API_URL
         elif data_source == "DRUG":
@@ -59,41 +57,50 @@ if st.session_state.messages[-1]["role"] != "assistant":
             "use_semantic_scholar": data_source == "SCHOLAR",
         }
 
-        # Make the API call
-        response = requests.post(api_url, json=request_data)
-        if response.status_code == 200:
-            data = response.json()
-            rag_response = data["response"]
-            references = data["references"]
-            source_nodes = data["source_nodes"]
+        # Make the API call and stream the response
+        with requests.post(api_url, json=request_data, stream=True) as response:
+            if response.status_code == 200:
+                full_response = ""
+                all_references = []  # Collect all references here
+                for line in response.iter_lines():
+                    if line:
+                        # Decode the line from bytes to string
+                        line = line.decode("utf-8")
+                        data = json.loads(line)
+                        rag_response = data["response"]
+                        references = data["references"]
 
-            full_response = rag_response
+                        # Update the response text in real-time
+                        full_response += rag_response
+                        message_placeholder.markdown(full_response)
 
-            if references:
-                full_response += "\n\n### References\n\n"
-                for ref in references:
-                    metadata_str = json.dumps(ref["metadata"], indent=2)
-                    url = ref["metadata"].get("url", None)
-                    if ref["metadata"].get("document_type", None) == "webpage":
-                        full_response += f"#### [{ref['id']}]\n\n{metadata_str}\n\n"
-                    else:
-                        full_response += f"#### [{ref['id']}]\n\n{metadata_str}\n\n{ref['content']}\n\n"
+                        # Collect references for later
+                        all_references.extend(references)
 
-            message_placeholder.markdown(full_response)
+                # After the response is complete, append references
+                if all_references:
+                    references_text = "\n\n### References\n\n"
+                    for ref in all_references:
+                        metadata_str = json.dumps(ref["metadata"], indent=2)
+                        url = ref["metadata"].get("url", None)
+                        if ref["metadata"].get("document_type", None) == "webpage":
+                            references_text += (
+                                f"#### [{ref['id']}]\n\n{metadata_str}\n\n"
+                            )
+                        else:
+                            references_text += f"#### [{ref['id']}]\n\n{metadata_str}\n\n{ref['content']}\n\n"
 
-            with st.expander("Retrieved nodes"):
-                for idx, node_text in enumerate(source_nodes):
-                    st.write(
-                        f"#### Retrieved node [{idx + 1}]\n\n```{node_text}```\n\n"
-                    )
+                    # Append references to the full response
+                    full_response += references_text
+                    message_placeholder.markdown(full_response)
 
-            st.session_state.messages.append(
-                {"role": "assistant", "content": full_response}
-            )
-        else:
-            st.error(
-                f"Failed to get response from the API. Status code: {response.status_code}"
-            )
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": full_response}
+                )
+            else:
+                st.error(
+                    f"Failed to get response from the API. Status code: {response.status_code}"
+                )
 
 
 def reset_conversation():

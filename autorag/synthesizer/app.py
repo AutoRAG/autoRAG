@@ -11,6 +11,7 @@ import hydra
 from omegaconf import DictConfig
 from flask_cors import CORS
 import urllib
+import json
 
 app = Flask(__name__)
 CORS(app)
@@ -93,53 +94,97 @@ def query():
         prompt = hyde(prompt)
 
     response = query_engine.query(prompt)
-    raw_rag_response = "".join(response.response_gen)
-    rag_response, mapping = replace_with_identifiers(raw_rag_response)
-    print(f"document_bucket_name: {document_bucket_name}")
+    mapping = {}
     references = []
-    for raw_ref_id, new_ref_id in mapping.items():
-        ref_node = response.source_nodes[raw_ref_id - 1]
-        metadata = ref_node.node.metadata
-        if (
-            "document_name" in metadata
-            and metadata["document_name"] is not None
-            and metadata.get("url", None) is None
-        ):
-            if metadata["document_name"].endswith(".json"):
-                document_name = metadata["document_name"].replace(".json", ".pdf")
-            elif metadata["document_name"].endswith(".pdf"):
-                document_name = metadata["document_name"]
-            else:
-                document_name = metadata["document_name"] + ".pdf"
-            url_encoded_document_name = urllib.parse.quote_plus(document_name)
-            metadata["url"] = (
-                f"https://{document_bucket_name}.s3.amazonaws.com/{app_name}/{url_encoded_document_name}"
-            )
-        print(f"metadata: {metadata}")
-        references.append(
-            {
-                "id": new_ref_id,
-                "content": ref_node.node.get_content(metadata_mode=MetadataMode.NONE),
-                "metadata": ref_node.node.metadata,
-            }
-        )
 
-    source_nodes = [
-        {
-            "content": node.node.get_content(metadata_mode=MetadataMode.NONE),
-            "metadata": node.node.metadata,
-        }
-        for node in response.source_nodes
-    ]
-    if len(references) == 0 and app_name == "scholar":
-        rag_response = "Here are some potentially relevant references."
-    return jsonify(
-        {
-            "response": rag_response,
-            "references": references,
-            "source_nodes": source_nodes,
-        }
-    )
+    def stream_response():
+        with app.app_context():
+            mapping = {}
+            buffer = ""  # Buffer to store items without spaces
+
+            def word_generator():
+                nonlocal buffer
+                for item in response.response_gen:
+                    # If buffer exists and current item has no spaces, concatenate
+                    if not buffer.strip() and " " not in item:
+                        buffer += item
+                        continue
+                    # If we have a buffer, process it first
+                    if buffer:
+                        if " " not in item:
+                            buffer += item
+                            continue
+                        # Process buffer + current item
+                        full_text = buffer + item
+                        buffer = ""
+                    else:
+                        full_text = item
+
+                    # Split by space and yield each word
+                    words = full_text.split(" ")
+                    for word in words[:-1]:
+                        if word:  # Only yield non-empty words
+                            yield word + " "
+                    if words[-1]:  # Handle the last word
+                        buffer = words[-1]  # Store the last word in buffer
+
+            # Use the word generator in the main loop
+            for item in word_generator():
+                references = []
+                new_item, new_mapping = replace_with_identifiers(
+                    item, existing_mapping=mapping
+                )
+                mapping.update(new_mapping)
+                # Check for new references
+                for raw_ref_id, new_ref_id in new_mapping.items():
+                    ref_node = response.source_nodes[raw_ref_id - 1]
+                    metadata = ref_node.node.metadata
+                    if (
+                        "document_name" in metadata
+                        and metadata["document_name"] is not None
+                        and metadata.get("url", None) is None
+                    ):
+                        if metadata["document_name"].endswith(".json"):
+                            document_name = metadata["document_name"].replace(
+                                ".json", ".pdf"
+                            )
+                        elif metadata["document_name"].endswith(".pdf"):
+                            document_name = metadata["document_name"]
+                        else:
+                            document_name = metadata["document_name"] + ".pdf"
+                        url_encoded_document_name = urllib.parse.quote_plus(
+                            document_name
+                        )
+                        metadata["url"] = (
+                            f"https://{document_bucket_name}.s3.amazonaws.com/{app_name}/{url_encoded_document_name}"
+                        )
+                    references.append(
+                        {
+                            "id": new_ref_id,
+                            "content": ref_node.node.get_content(
+                                metadata_mode=MetadataMode.NONE
+                            ),
+                            "metadata": ref_node.node.metadata,
+                        }
+                    )
+
+                # Convert the response to JSON and then to bytes
+                yield (
+                    json.dumps({"response": new_item, "references": references}) + "\n"
+                ).encode("utf-8")
+
+            if len(references) == 0 and app_name == "scholar":
+                yield (
+                    json.dumps(
+                        {
+                            "response": "Here are some potentially relevant references.",
+                            "references": references,
+                        }
+                    )
+                    + "\n"
+                ).encode("utf-8")
+
+    return app.response_class(stream_response(), mimetype="application/json")
 
 
 if __name__ == "__main__":
