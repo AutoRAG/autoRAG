@@ -96,7 +96,7 @@ def query():
     response = query_engine.query(prompt)
     mapping = {}
     references = []
-
+    
     def stream_response():
         with app.app_context():
             mapping = {}
@@ -127,7 +127,11 @@ def query():
                             yield word + " "
                     if words[-1]:  # Handle the last word
                         buffer = words[-1]  # Store the last word in buffer
+                if buffer:
+                    yield buffer
 
+            all_references = []
+            all_ref_ids = set()
             # Use the word generator in the main loop
             for item in word_generator():
                 references = []
@@ -158,27 +162,29 @@ def query():
                         metadata["url"] = (
                             f"https://{document_bucket_name}.s3.amazonaws.com/{app_name}/{url_encoded_document_name}"
                         )
-                    references.append(
-                        {
-                            "id": new_ref_id,
-                            "content": ref_node.node.get_content(
-                                metadata_mode=MetadataMode.NONE
-                            ),
-                            "metadata": ref_node.node.metadata,
-                        }
-                    )
-
+                    new_ref = {
+                        "id": new_ref_id,
+                        "content": ref_node.node.get_content(
+                            metadata_mode=MetadataMode.NONE
+                        ),
+                        "metadata": ref_node.node.metadata,
+                    }
+                    references.append(new_ref)
+                    if new_ref_id not in all_ref_ids:
+                        all_ref_ids.add(new_ref_id)
+                        all_references.append(new_ref)         
+                
                 # Convert the response to JSON and then to bytes
                 yield (
                     json.dumps({"response": new_item, "references": references}) + "\n"
                 ).encode("utf-8")
 
-            if len(references) == 0 and app_name == "scholar":
+            if len(all_references) == 0 and app_name == "scholar":
                 yield (
                     json.dumps(
                         {
                             "response": "Here are some potentially relevant references.",
-                            "references": references,
+                            "references": all_references,
                         }
                     )
                     + "\n"
