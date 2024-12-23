@@ -8,17 +8,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Set up the API endpoints
-DEVICE_PORT = os.getenv("DEVICE_PORT", "3000")
-SCHOLAR_PORT = os.getenv("SCHOLAR_PORT", "3001")
-DRUG_PORT = os.getenv("DRUG_PORT", "3002")
+RAG_PORT = os.getenv("RAG_PORT", "3003")
+SCHOLAR_PORT = os.getenv("SCHOLAR_PORT", "3004")
 
-DEVICE_API_URL = f"http://127.0.0.1:{DEVICE_PORT}/query"
+RAG_API_URL = f"http://127.0.0.1:{RAG_PORT}/query"
 SCHOLAR_API_URL = f"http://127.0.0.1:{SCHOLAR_PORT}/query"
-DRUG_API_URL = f"http://127.0.0.1:{DRUG_PORT}/query"
 
 st.header("AutoRAG Chatbot Demo")
 
-data_source = st.selectbox("Select Data Source", ["DEVICE", "DRUG", "SCHOLAR"])
+data_source = st.selectbox("Select Data Source", ["RAG", "SCHOLAR"])
 
 
 if "messages" not in st.session_state:
@@ -41,10 +39,8 @@ if st.session_state.messages[-1]["role"] != "assistant":
         message_placeholder = st.empty()
 
         # Prepare the request data
-        if data_source == "DEVICE":
-            api_url = DEVICE_API_URL
-        elif data_source == "DRUG":
-            api_url = DRUG_API_URL
+        if data_source == "RAG":
+            api_url = RAG_API_URL
         elif data_source == "SCHOLAR":
             api_url = SCHOLAR_API_URL
         else:
