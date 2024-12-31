@@ -96,7 +96,7 @@ def query():
     response = query_engine.query(prompt)
     mapping = {}
     references = []
-    
+
     def stream_response():
         with app.app_context():
             mapping = {}
@@ -172,8 +172,8 @@ def query():
                     references.append(new_ref)
                     if new_ref_id not in all_ref_ids:
                         all_ref_ids.add(new_ref_id)
-                        all_references.append(new_ref)         
-                
+                        all_references.append(new_ref)
+
                 # Convert the response to JSON and then to bytes
                 yield (
                     json.dumps({"response": new_item, "references": references}) + "\n"
