@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Set up the API endpoints
-RAG_PORT = os.getenv("RAG_PORT", "3003")
-SCHOLAR_PORT = os.getenv("SCHOLAR_PORT", "3004")
+RAG_PORT = os.getenv("RAG_PORT", "3002")
+SCHOLAR_PORT = os.getenv("SCHOLAR_PORT", "3003")
 
 RAG_API_URL = f"http://127.0.0.1:{RAG_PORT}/query"
 SCHOLAR_API_URL = f"http://127.0.0.1:{SCHOLAR_PORT}/query"

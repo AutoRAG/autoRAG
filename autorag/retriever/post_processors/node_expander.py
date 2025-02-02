@@ -1,16 +1,16 @@
 from collections import defaultdict
 import os
 from typing import Any, List, Optional
-from llama_index.bridge.pydantic import Field
-from llama_index.postprocessor.types import BaseNodePostprocessor
-from llama_index.schema import (
+from llama_index.core.bridge.pydantic import Field
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.schema import (
     TextNode,
     QueryBundle,
     NodeWithScore,
     NodeRelationship,
     RelatedNodeInfo,
 )
-from llama_index.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.docstore import SimpleDocumentStore
 
 ORIGINAL_NODE_DIR_BASENAME = "original_docstore.json"
 EXPANDED_NODE_DIR_BASENAME = "parent_docstore.json"

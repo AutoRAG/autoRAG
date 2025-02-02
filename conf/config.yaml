@@ -3,6 +3,7 @@ indexer:
   build:
     data_dir: data/${app_name}/corpus
     index_dir: persist_dir/${app_name}/index
+    embed_model_name: text-embedding-3-large
     pre_processor_cfg:
       pre_processor_type: azure
       azure_pre_processor_cfg:

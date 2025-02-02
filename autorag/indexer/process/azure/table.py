@@ -1,5 +1,5 @@
 from typing import List, Dict, Any, Optional
-from llama_index.schema import TextNode
+from llama_index.core.schema import TextNode
 from nltk.tokenize import word_tokenize
 
 

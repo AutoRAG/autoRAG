@@ -1,8 +1,9 @@
-from llama_index import VectorStoreIndex, SimpleDirectoryReader
-from llama_index import StorageContext, load_index_from_storage
-from llama_index import ServiceContext
-from llama_index.readers.base import BaseReader
-from llama_index.schema import Document
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core import StorageContext, load_index_from_storage
+from llama_index.core import Settings
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document
+from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 from .process.azure.output import AzureOutputProcessor
@@ -31,7 +32,8 @@ class ExpandedIndexer:
         self.node_expander = node_expander
 
     @classmethod
-    def build(cls, data_dir, pre_processor_cfg, post_processor_cfg):
+    def build(cls, data_dir, pre_processor_cfg, post_processor_cfg, embed_model_name):
+        Settings.embed_model = OpenAIEmbedding(model=embed_model_name)
         # Processing documents based on the specified pre_processor type.
         sentence_splitter_cfg = pre_processor_cfg.sentence_splitter_cfg
         if pre_processor_cfg.pre_processor_type == "azure":
@@ -50,7 +52,7 @@ class ExpandedIndexer:
                 table_process_cfg,
                 sentence_splitter_cfg,
             ).nodes
-            index = VectorStoreIndex(nodes)
+            index = VectorStoreIndex(nodes, embed_model=Settings.embed_model)
         else:
             if pre_processor_cfg.file_metadata:
                 file_metadata = file_metadata_dict[pre_processor_cfg.file_metadata]
@@ -64,12 +66,10 @@ class ExpandedIndexer:
             ).load_data()
 
             # Use sentence splitter configuration if provided
-            service_context = ServiceContext.from_defaults(
-                chunk_size=sentence_splitter_cfg.chunk_size,
-                chunk_overlap=sentence_splitter_cfg.chunk_overlap,
-            )
+            Settings.chunk_size = sentence_splitter_cfg.chunk_size
+            Settings.chunk_overlap = sentence_splitter_cfg.chunk_overlap
             index = VectorStoreIndex.from_documents(
-                documents, service_context=service_context
+                documents, embed_model=Settings.embed_model
             )
 
         if post_processor_cfg.enable_node_expander:
@@ -84,19 +84,20 @@ class ExpandedIndexer:
     @classmethod
     def load(cls, index_dir, enable_node_expander=False):
         embed_model_config_path = ExpandedIndexer.get_embed_model_config_path(index_dir)
-        from llama_index.embeddings.loading import load_embed_model
+        from llama_index.core.embeddings.loading import load_embed_model
 
         with open(embed_model_config_path, "r", encoding="utf-8") as f:
             embed_model_config = json.loads(f.read())
+        print(embed_model_config)
         embed_model = load_embed_model(embed_model_config)
-        service_context = ServiceContext.from_defaults(embed_model=embed_model)
+        Settings.embed_model = embed_model
         # rebuild storage context
         storage_context_dir = ExpandedIndexer.get_storage_context_dir(index_dir)
         storage_context = StorageContext.from_defaults(persist_dir=storage_context_dir)
 
         # load index
         index = load_index_from_storage(
-            storage_context, service_context=service_context
+            storage_context
         )
         if enable_node_expander:
             expanded_node_dir = ExpandedIndexer.get_expanded_node_dir(index_dir)
@@ -113,7 +114,7 @@ class ExpandedIndexer:
         self.index.storage_context.persist(persist_dir=storage_context_dir)
         if self.node_expander:
             self.node_expander.persist(expanded_node_dir)
-        embed_model_config = self.index.service_context.embed_model.to_dict()
+        embed_model_config = self.index._embed_model.to_dict()
         embed_model_config.pop("api_key")
         with open(embed_model_config_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(embed_model_config))

@@ -1,7 +1,7 @@
 import os
-from llama_index.schema import TextNode, NodeWithScore, QueryBundle
-from llama_index.indices.vector_store.retrievers.retriever import VectorIndexRetriever
-from llama_index.core.base_retriever import BaseRetriever
+from llama_index.core.schema import TextNode, NodeWithScore, QueryBundle
+from llama_index.core.indices.vector_store.retrievers.retriever import VectorIndexRetriever
+from llama_index.core.base.base_retriever import BaseRetriever
 import requests
 from bs4 import BeautifulSoup
 from typing import List
@@ -9,8 +9,8 @@ import re
 from autorag.data_builder.pdf_to_txt import parse_single_pdf
 from requests import Session
 from typing import Generator, Union
-from llama_index.llms import OpenAI
-from llama_index.prompts.base import PromptTemplate
+from llama_index.llms.openai import OpenAI
+from llama_index.core.prompts.base import PromptTemplate
 
 QUERY2KEYWORD_PROMPT_TEMPLATE = PromptTemplate(
     template="Given a natural language question or a conversion, rewrite it into a short keyword-based query. \n\n<Original question>\n{question}\n\n<keyword-based query>\n"

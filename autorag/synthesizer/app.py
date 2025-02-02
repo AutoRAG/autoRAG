@@ -1,11 +1,11 @@
 from flask import Flask, request, jsonify
-from llama_index.llms import OpenAI
-from llama_index.indices.query.query_transform import HyDEQueryTransform
+from llama_index.llms.openai import OpenAI
+from llama_index.core.indices.query.query_transform import HyDEQueryTransform
 from autorag.synthesizer.utils import init_query_engine, replace_with_identifiers
-from llama_index.chat_engine.condense_question import (
+from llama_index.core.chat_engine.condense_question import (
     DEFAULT_PROMPT as DEFAULT_CONDENSE_PROMPT,
 )
-from llama_index.schema import MetadataMode
+from llama_index.core.schema import MetadataMode
 from dotenv import load_dotenv
 import hydra
 from omegaconf import DictConfig

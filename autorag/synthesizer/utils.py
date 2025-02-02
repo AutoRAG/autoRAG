@@ -1,5 +1,5 @@
 # import streamlit as st
-from llama_index.query_engine.citation_query_engine import (
+from llama_index.core.query_engine.citation_query_engine import (
     CITATION_QA_TEMPLATE,
     CITATION_REFINE_TEMPLATE,
 )
@@ -10,12 +10,12 @@ from autorag.retriever.google_and_vector_retriever import (
     GoogleRetriever,
 )
 from autorag.retriever.semantic_scholar_retriever import SemanticScholarRetriever
-from llama_index import ServiceContext
-from llama_index.response_synthesizers import get_response_synthesizer, ResponseMode
+from llama_index.core import Settings
+from llama_index.core.response_synthesizers import CompactAndRefine
 
-from llama_index.prompts import PromptTemplate
-from llama_index.schema import MetadataMode
-from llama_index.query_engine import CitationQueryEngine
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.schema import MetadataMode
+from llama_index.core.query_engine import CitationQueryEngine
 
 
 # @st.cache_resource
@@ -28,13 +28,15 @@ def init_query_engine(
     semantic_scholar=False,
 ):
 
-    synthesizer_service_context = ServiceContext.from_defaults(llm=_llm)
+    # Set global settings
+    Settings.llm = _llm
+
     citation_qa_template = CITATION_QA_TEMPLATE
 
     if semantic_scholar:
         retriever = SemanticScholarRetriever(topk=_citation_cfg.similarity_top_k)
         node_postprocessors = None
-        query_engine_callback_manager = synthesizer_service_context.callback_manager
+        query_engine_callback_manager = Settings.callback_manager
 
     else:
         expanded_index = ExpandedIndexer.load(index_dir, enable_node_expander)
@@ -47,22 +49,19 @@ def init_query_engine(
         node_postprocessors = (
             [expanded_index.node_expander] if enable_node_expander else None
         )
-        query_engine_callback_manager = index.service_context.callback_manager
+        query_engine_callback_manager = Settings.callback_manager
 
     if _citation_cfg.citation_qa_template_path:
         with open(_citation_cfg.citation_qa_template_path, "r", encoding="utf-8") as f:
             citation_qa_template = PromptTemplate(f.read())
 
-    response_synthesizer = get_response_synthesizer(
-        service_context=synthesizer_service_context,
+    response_synthesizer = CompactAndRefine(
+        llm=_llm,
         text_qa_template=citation_qa_template,
         refine_template=CITATION_REFINE_TEMPLATE,
-        response_mode=ResponseMode.COMPACT,
-        use_async=False,
         streaming=streaming,
     )
 
-    # service_context for the synthesizer is same as service_context of the index
     query_engine = CitationQueryEngine(
         retriever=retriever,
         response_synthesizer=response_synthesizer,

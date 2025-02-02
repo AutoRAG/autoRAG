@@ -1,9 +1,9 @@
-from llama_index import ServiceContext
-from llama_index import StorageContext, load_index_from_storage
+from llama_index.core import ServiceContext
+from llama_index.core import StorageContext, load_index_from_storage
 from omegaconf import DictConfig, OmegaConf
 import hydra
-from llama_index.evaluation import RetrieverEvaluator
-from llama_index.evaluation import (
+from llama_index.core.evaluation import RetrieverEvaluator
+from llama_index.core.evaluation import (
     EmbeddingQAFinetuneDataset,
 )
 import pandas as pd
