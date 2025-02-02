@@ -13,7 +13,7 @@ def main(cfg: DictConfig):
         cur_cfg.data_dir,
         cur_cfg.pre_processor_cfg,
         cur_cfg.post_processor_cfg,
-        cur_cfg.embed_model_name
+        cur_cfg.embed_model_name,
     )
     expanded_indexer.persist(cur_cfg.index_dir)
 

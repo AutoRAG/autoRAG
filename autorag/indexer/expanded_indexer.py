@@ -96,9 +96,7 @@ class ExpandedIndexer:
         storage_context = StorageContext.from_defaults(persist_dir=storage_context_dir)
 
         # load index
-        index = load_index_from_storage(
-            storage_context
-        )
+        index = load_index_from_storage(storage_context)
         if enable_node_expander:
             expanded_node_dir = ExpandedIndexer.get_expanded_node_dir(index_dir)
             node_expander = NodeExpander.load(expanded_node_dir)

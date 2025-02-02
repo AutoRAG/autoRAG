@@ -1,6 +1,8 @@
 import os
 from llama_index.core.schema import TextNode, NodeWithScore, QueryBundle
-from llama_index.core.indices.vector_store.retrievers.retriever import VectorIndexRetriever
+from llama_index.core.indices.vector_store.retrievers.retriever import (
+    VectorIndexRetriever,
+)
 from llama_index.core.base.base_retriever import BaseRetriever
 import requests
 from bs4 import BeautifulSoup
